@@ -927,6 +927,7 @@ net.sendSync = function(port, dest, msgType, body)
         if rPort ~= port then return true end
         if message.dest == ipAddr then
             if message.msgid == id then
+                log:debug('= Found message')
                 return false
             else
                 log:debug(('- `%d` != `%d`'):format(message.msgid, id))
@@ -981,6 +982,7 @@ net.sendAdvSync = function(port, dest, head, body)
         -- if message.header == head and message.body == body then return true end
         if message.dest == ipAddr then
             if message.msgid == id then
+                log:debug('= Found message')
                 return false
             else
                 log:debug(('- `%d` != `%d`'):format(message.msgid, id))
