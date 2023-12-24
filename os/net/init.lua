@@ -928,7 +928,11 @@ net.sendSync = function(port, dest, msgType, body)
         if message.dest == ipAddr then
             if message.msgid == id then
                 return false
+            else
+                log:debug(('- `%d` != `%d`'):format(message.msgid, id))
             end
+        else
+            log:debug(('+ `%s` != `%s`'):format(message.dest, ipAddr))
         end
         return true
     end, 2)
