@@ -168,9 +168,24 @@ end
 print("Done downloading OS")
 
 print("Installing pgm-get")
-shell.run("/os/bin/pgm-get", "update")
-shell.run("/os/bin/pgm-get", "install", "pgm-get")
-shell.run("/os/bin/pgm-get", "install", "pgm-get")
+
+local rspPGCore, msgPGCore = http.get('https://raw.githubusercontent.com/peterOS-pgm-get/pgm-get/master/core.lua')
+
+if rspPGCore == nil then
+    printError("HTTP error getting pgm-get: " .. msgPGCore)
+    return
+end
+if rspPGCore.getResponseCode() ~= 200 then
+    printError("HTTP response code " .. rspPGCore.getResponseCode() .. " getting pgm-get; msg: " .. rspPGCore.readAll())
+    return
+end
+local pgCoreF = fs.open('/os/bin/pgm-get/core.lua')
+if not pgCoreF then
+    printError('Unable to install pgm-get')
+    return
+end
+pgCoreF.write(msgPGCore.readAll())
+pgCoreF.close()
 shell.run('/os/bin/pgm-get/core.lua')
 
 print("Installing default programs")
