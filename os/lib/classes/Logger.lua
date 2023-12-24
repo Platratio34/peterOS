@@ -123,13 +123,14 @@ function Logger:getTimeString()
         return ''
     end
     local time = os.epoch('utc')
-    time = time / 1000
+    local ms = time % 1000
+    time = math.floor(time / 1000)
     local s = time % 60
     time = math.floor(time / 60)
     local m = time % 60
     time = math.floor(time / 60)
     local h = time % 24
-    return h..':'..m..':'..s..' | '
+    return h..':'..m..':'..s..'.'..ms..' | '
 end
 
 ---Logs a <code>DEBUG</code> message
