@@ -179,7 +179,7 @@ if rspPGCore.getResponseCode() ~= 200 then
     printError("HTTP response code " .. rspPGCore.getResponseCode() .. " getting pgm-get; msg: " .. rspPGCore.readAll())
     return
 end
-local pgCoreF = fs.open('/os/bin/pgm-get/core.lua')
+local pgCoreF = fs.open('/os/bin/pgm-get/core.lua', 'w')
 if not pgCoreF then
     printError('Unable to install pgm-get')
     return
