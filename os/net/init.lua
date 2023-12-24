@@ -1196,7 +1196,7 @@ net.setLogVerbose = function(vb)
     logVerboseMessages = vb
 end
 
-shell.alias('net', '/os/net/cmd.lua')
+shell.setAlias('net', '/os/net/cmd.lua')
 
 ---@alias NetAddress number|string IP or HW address
 
