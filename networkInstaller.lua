@@ -14,21 +14,27 @@ end
 if fs.exists("/os") then
     print("OS already installed")
     if over == 0 then
-        write("Do you want to overwrite it? (y/n) ") 
+        write("Do you want to overwrite it? (y/n) ")
         local i = string.lower(read())
-        if i=="y" then 
+        if i == "y" then
             over = 1
-            shell.run("su")
         end
     end
     if over == 1 then
         -- print("Erasing OS Files . . .")
         -- fs.delete("/os/")
-        -- fs.delete("/startup.lua") 
+        -- fs.delete("/startup.lua")
     else
         print("Terminating install")
         return
     end
+end
+if _G.user and not user.isSu() then
+    shell.run("su")
+end
+if _G.user and not user.isSu() then
+    printError('Must have root access to install')
+    return
 end
 
 local repoURL = 'https://raw.githubusercontent.com/Platratio34/peterOS/'
