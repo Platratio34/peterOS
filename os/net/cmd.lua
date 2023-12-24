@@ -9,7 +9,7 @@ elseif args[1] == 'ip' then
         return
     end
     if args[2] == '' or args[2] == '-4' then
-        print(net.ipFormat(net.getIp()))
+        print(net.ipFormat(net.getIP()))
         return
     end
     print('Unknown IP format')
