@@ -978,6 +978,8 @@ net.sendAdvSync = function(port, dest, head, body)
         if message.dest == ipAddr then
             if message.msgid == id then
                 return false
+            else
+                log:debug(('- `%d` != `%d`'):format(message.msgid, id))
             end
         end
         return true
