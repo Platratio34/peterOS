@@ -981,6 +981,8 @@ net.sendAdvSync = function(port, dest, head, body)
             else
                 log:debug(('- `%d` != `%d`'):format(message.msgid, id))
             end
+        else
+            log:debug(('+ `%s` != `%s`'):format(message.dest, ipAddr))
         end
         return true
     end, 2)
