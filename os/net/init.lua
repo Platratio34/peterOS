@@ -922,6 +922,7 @@ net.sendSync = function(port, dest, msgType, body)
     if id == -1 then
         return "send_fail"
     end
+    log:debug(("Waiting for reply w/ id `%d`"):format(id))
     return waitForMsg(function(rPort, message)
         if rPort ~= port then return true end
         if message.dest == ipAddr then
@@ -970,6 +971,7 @@ net.sendAdvSync = function(port, dest, head, body)
     if id == -1 then
         return "send_fail"
     end
+    log:debug(("Waiting for reply w/ id `%d`"):format(id))
     return waitForMsg(function(rPort, message)
         if rPort ~= port then return true end
         -- if message.header == head and message.body == body then return true end
