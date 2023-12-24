@@ -8,7 +8,7 @@ elseif args[1] == 'ip' then
         print('No IP yet')
         return
     end
-    if args[2] == '' or args[2] == '-4' then
+    if (not args[2]) or args[2] == '' or args[2] == '-4' then
         print(net.ipFormat(net.getIP()))
         return
     end
