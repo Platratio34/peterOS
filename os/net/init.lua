@@ -1126,10 +1126,11 @@ net.stringMessage = function(msg)
         str = str .. " | " .. textutils.serialise(msg.header) .. " : "
     end
     if msg.body.cipher then
-        str = str .. 'cipher = ' ..  textutils.serialise(msg.body.cipher)
-        str = str .. ', sig = ' ..  textutils.serialise(msg.body.sig)
+        str = str .. 'cipher = ' ..  textutils.serialiseJSON(msg.body.cipher)
+        str = str .. ', sig = ' ..  textutils.serialiseJSON(msg.body.sig)
+    else
+        str = str .. textutils.serialise(msg.body)
     end
-    -- str = str .. textutils.serialise(msg.body)
     return str
 end
 
