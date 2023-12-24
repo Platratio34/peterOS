@@ -1,0 +1,11 @@
+[
+    {"name":"checkSu", "exec":"checkSu.lua", "cmpt":null, "version":0},
+    {"name":"logout", "exec":"logout.lua", "cmpt":null, "version":0},
+    {"name":"password", "exec":"password.lua", "cmpt":null, "version":0},
+    {"name":"pgm-get", "exec":"pgm-get.lua", "cmpt":"pgm-get-complete", "version":0},
+    {"name":"su", "exec":"su.lua", "cmpt":null, "version":0},
+    {"name":"sudo", "exec":"sudo.lua", "cmpt":"sudo-complete", "version":0},
+    {"name":"version", "exec":"version.lua", "cmpt":null, "version":0},
+    {"name":"osUpdate", "exec":"osUpdate.lua", "cmpt":null, "version":0},
+    {"name":"ping", "exec":"ping.lua", "cmpt":null, "version":0}
+]

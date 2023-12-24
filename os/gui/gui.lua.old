@@ -1,0 +1,567 @@
+local Logger = pos.require('logger')
+local log = Logger('/home/.pgmLog/pos.gui.log')
+log:info('Starting GUI')
+
+local gui = {}
+gui._log = log
+---Sets the Logger for gui, if not set is /home/.pgmLog/pos.gui.log with full log
+---@param newLog Logger PeterOS logger to be used by GUI functions
+function gui.setLog(newLog)
+    log = newLog
+    gui._log = log
+end
+---PeterOS Graphical User Interface package
+_G.pos.gui = gui
+---Collection of meta tables
+gui.mt = {}
+--- INTERNAL gui information
+local _gui = {}
+
+function gui.inWindow(window, x, y, w, h)
+    if x <= window.x or x > window.x + window.w then
+        return false
+    end
+    if y <= window.y or y > window.y + window.h then
+        return false
+    end
+    local x2 = x + w - 1
+    local y2 = y + h - 1
+    if x2 <= window.x or x2 > window.x + window.w then
+        return false
+    end
+    if y2 <= window.y or y2 > window.y + window.h then
+        return false
+    end
+    return true
+end
+function gui.inWindowRel(window, x, y, w, h)
+    return true
+    -- if x <= 0 or x > window.w then
+    --     return false
+    -- end
+    -- if y <= 0 or y > window.h then
+    --     return false
+    -- end
+    -- local x2 = x + w - 1
+    -- local y2 = y + h - 1
+    -- if x2 <= 0 or x2 > window.w then
+    --     return false
+    -- end
+    -- if y2 <= 0 or y2 > window.h then
+    --     return false
+    -- end
+    -- return true
+    -- return gui.inWindow(window, x, y, w, h)
+end
+
+function gui.inBox(window,bx,by,bw,bh,x,y)
+    -- bx = bx + window.x
+    -- by = by + window.y
+    local bx2 = bx + bw - 1
+    local by2 = by + bh - 1
+
+    log:debug(bx..','..by..' - '..bx2..','..by2..' in '..x..','..y)
+
+    if x < bx or x > bx2 then
+        return false
+    end
+    if y < by or y > by2 then
+        return false
+    end
+    return true
+end
+
+-- local Window = {
+--     bg = colors.black,
+--     _name = '',
+--     visible = false,
+--     exitOnHide = true,
+
+--     x = 0,
+--     y = 0,
+    
+--     _elements = {},
+--     __elementIndex = 0,
+--     _menuOptions = {},
+--     __menuIndex = 0,
+--     _nameOffset = 0,
+-- }
+-- Window.w, Window.h = term.getSize()
+-- ---Set window visible
+-- function Window:show()
+--     self.visible = true
+-- end
+-- ---Set window not visible
+-- function Window:hide()
+--     self.visible = false
+--     if self.exitOnHide then
+--         gui.running = false
+--     end
+-- end
+-- ---Draw window
+-- function Window:draw()
+--     paintutils.drawFilledBox(1 + self.x, 1 + self.y, self.w + self.x, self.h + self.y, self.bg)
+--     for _, el in pairs(self._elements) do
+--         el:draw(self)
+--     end
+--     paintutils.drawFilledBox(1 + self.x, 1 + self.y, self.w + self.x, 1 + self.y, colors.gray)
+--     term.setBackgroundColor(colors.gray)
+--     term.setTextColor(colors.white)
+--     term.setCursorPos(self._nameOffset + self.x, 1 + self.y)
+--     term.write(self._name)
+--     term.setTextColor(colors.red)
+--     term.setCursorPos(self.w + self.x, 1 + self.y)
+--     term.write('X')
+
+--     for _, mo in pairs(self._menuOptions) do
+--         mo:draw(self)
+--     end
+-- end
+-- ---Process event for window
+-- ---@param event table Event table
+-- function Window:process(event)
+--     if event[1] == 'mouse_click' then
+--         local _, button, x, y = unpack(event)
+--         x = x - self.x
+--         y = y - self.y
+--         if y == 1 and x == self.w then
+--             self.visible = false;
+--             if self.exitOnHide then
+--                 gui.running = false
+--             end
+--             return
+--         end
+--     end
+
+--     for _, el in pairs(self._elements) do
+--         el:process(event, self)
+--     end
+--     for _, el in pairs(self._menuOptions) do
+--         el:process(event, self)
+--     end
+-- end
+
+-- ---Add a UIElement to the window
+-- ---@param element UiElement Element to add
+-- ---@return number index Element index, used to remove the element later
+-- function Window:addElement(element)
+--     local index = self.__elementIndex
+--     self._elements[index] = element
+--     self.__elementIndex = self.__elementIndex + 1
+--     return index
+-- end
+-- ---Removes a UiElement by index
+-- ---@param index number Element index
+-- function Window:removeElement(index)
+--     self._elements[index] = nil
+-- end
+
+-- ---Adds a MenuOption to the window
+-- ---@param option MenuOption Menu option
+-- ---@return number index Option index, used for removal
+-- function Window:addMenuOption(option)
+--     local index = self.__menuIndex
+--     self._menuOptions[index] = option
+--     self.__menuIndex = self.__menuIndex + 1
+--     return index
+-- end
+-- ---Removes a menu option by index
+-- ---@param index number Option index
+-- function Window:removeMenuOption(index)
+--     self._menuOptions[index] = nil
+-- end
+
+-- ---Set the window name
+-- ---@param name string Window name
+-- function Window:setName(name)
+--     self._name = name
+--     self._nameOffset = (self.w / 2) - (string.len(self._name) / 2)
+-- end
+-- ---Get the current name of this window
+-- ---@return string name
+-- function Window:getName()
+--     return self._name
+-- end
+-- ---Set the location of the window (off set location not pixel location)
+-- ---@param x number
+-- ---@param y number
+-- function Window:setPos(x, y)
+--     self.x = x
+--     self.y = y
+-- end
+-- ---Set the size of the window
+-- ---@param w number
+-- ---@param h number
+-- function Window:setSize(w, h)
+--     self.w = w
+--     self.h = h
+--     self._nameOffset = (self.w / 2) - (string.len(self._name) / 2)
+-- end
+-- ---Create a new window
+-- ---@param name string Window name, dispaled in center of top bar
+-- ---@param background nil|number Window background color
+-- ---@return Window window
+-- function gui.Window(name, background)
+
+--     local o = {}
+--     setmetatable(o, { __index = Window })
+--     o:setName(name)
+--     o.bg = background
+--     if background ~= nil then
+--         o.bg = background
+--     end
+
+--     return o
+-- end
+
+-- ---Creates a basic UiElement. Inteded for creating custom UI elements
+-- ---@return UiElement element
+-- function gui.UiElement()
+--     local o = {}
+--     o.x = 1
+--     o.y = 1
+--     o.w = 1
+--     o.h = 1
+--     function o:draw(window) end
+--     function o:process(event, window) end
+--     return o
+-- end
+
+-- ---Creates a text box
+-- ---@param x number X coord
+-- ---@param y number Y coord
+-- ---@param background number Background color
+-- ---@param forgroud number Text color
+-- ---@param text string Text
+-- ---@return UiElement textBox
+-- function gui.TextBox(x, y, background, forgroud, text, w)
+--     local o = gui.UiElement()
+--     o.x = x
+--     o.y = y
+--     o.w = w or string.len(text)
+--     o.h = 1
+--     o.bg = background
+--     o.fg = forgroud
+--     o._text = text
+--     o._lines = {}
+--     function o:setText(text)
+--         self._text = text
+--         self._lines = {}
+--         local nls = string.split(text, '\n')
+--         for _, ln in pairs(nls) do
+--             if string.len(ln) <= self.w then
+--                 table.insert(self._lines, ln)
+--             else
+--                 for i = 1, string.len(ln), self.w do
+--                     local lnp = string.sub(ln, i, i + self.w)
+--                     table.insert(self._lines, lnp)
+--                 end
+--             end
+--         end
+--         self.h = #self._lines
+--     end
+--     function o:getText()
+--         return self._text
+--     end
+--     o:setText(text)
+--     function o:draw(window)
+--         -- local w = string.len(self.text)
+--         -- if not gui.inWindowRel(window,self.x,self.y,w,1) then return end
+--         -- paintutils.drawFilledBox(self.x + window.x, self.y + window.y, self.x + w - 1 + window.x, self.y + window.y, self.bg)
+--         term.setBackgroundColor(self.bg)
+--         term.setTextColor(self.fg)
+--         for i, ln in pairs(self._lines) do
+--             if gui.inWindowRel(window, self.x, self.y + i - 1, self.w, 1) then
+--                 paintutils.drawFilledBox(self.x + window.x, self.y + window.y + i - 1, self.x + self.w - 1 + window.x, self.y + window.y + i - 1, self.bg)
+--                 term.setCursorPos(self.x + window.x, self.y + window.y + i - 1)
+--                 term.write(ln)
+--             end
+--         end
+--         -- if string.len(self.text) <= self.w then
+--         --     term.setCursorPos(self.x + window.x, self.y + window.y)
+--         --     term.write(self.text)
+--         -- else
+--         --     local l = self.y + window.y
+--         --     for i=1,string.len(self.text),self.w do
+--         --         local ln = string.sub(self.text, i, i + self.w)
+--         --         term.setCursorPos(self.x + window.x, l)
+--         --         term.write(ln)
+--         --         l = l + 1
+--         --     end
+--         -- end
+--     end
+
+--     return o
+-- end
+---Creates a clickable button
+---@param x number X coord
+---@param y number Y coord
+---@param w number Width
+---@param h number Height
+---@param background number Background color
+---@param forgroud number Text color
+---@param text string Button text
+---@param func function On Click funciton. function(mouseButton)
+---@return UiElement button
+function gui.Button(x, y, w, h, background, forgroud, text, func)
+    local o = gui.UiElement()
+    o.x = x
+    o.y = y
+    o.w = w
+    o.h = h
+    o.bg = background
+    o.fg = forgroud
+    o.text = text
+    o.func = func
+    function o:draw(window)
+        if not gui.inWindowRel(window,self.x,self.y,self.w,self.h) then return end
+        paintutils.drawFilledBox(self.x + window.x, self.y + window.y, self.x + self.w - 1 + window.x, self.y + self.h - 1 + window.y, self.bg)
+        term.setBackgroundColor(self.bg)
+        term.setTextColor(self.fg)
+        term.setCursorPos(self.x + window.x, self.y + window.y)
+        term.write(self.text)
+    end
+
+    function o:process(event, window)
+        if event[1] == 'mouse_click' then
+            local _, btn, x, y = table.unpack(event)
+            x = x - window.x
+            y = y - window.y
+            if x >= self.x and x < self.x + self.w and y >= self.y and y < self.y + self.h then
+                self.func(btn)
+            end
+        end
+    end
+
+    return o
+end
+---Create a text input box
+---@param x number X coord
+---@param y number Y coord
+---@param w number Width
+---@param background number Background color
+---@param forgroud number Text color
+---@param func nil|function On Enter function. function(text)
+---@return UiElement textInput
+function gui.TextInput(x, y, w, background, forgroud, func)
+    local o = gui.UiElement()
+    o.x = x
+    o.y = y
+    o.w = w
+    o.bg = background
+    o.fg = forgroud
+    o.func = func
+    o.text = ''
+    o.focused = false
+    function o:draw(window)
+        if not gui.inWindowRel(window,self.x,self.y,self.w,1) then return end
+        paintutils.drawFilledBox(self.x + window.x, self.y + window.y, self.x + self.w - 1 + window.x, self.y + window.y, self.bg)
+        term.setBackgroundColor(self.bg)
+        term.setTextColor(self.fg)
+        term.setCursorPos(self.x + window.x, self.y + window.y)
+        term.write(self.text)
+    end
+    function o:process(event, window)
+        if event[1] == 'mouse_click' then
+            local _, _, x, y = table.unpack(event)
+            x = x - window.x
+            y = y - window.y
+            if x >= self.x and x < self.x + self.w and y == self.y then
+                self.focused = true
+            else
+                self.focused = false
+            end
+        end
+        if not self.focused then
+            return
+        end
+        if event[1] == 'char' then
+            local _, char = table.unpack(event)
+            -- self.text = self.
+            if string.len(self.text) < self.w then
+                self.text = self.text .. char
+            end
+        elseif event[1] == 'key' then
+            local _,key,_ table.unpack(event)
+            if key == keys.backspace then
+                self.text = string.sub(self.text, 1, -2)
+            elseif key == keys.enter or key == keys.numPadEnter then
+                self.func(self.text)
+            end
+        end
+    end
+    return o
+end
+
+---Creates a top bar Menu option
+---@param x number X coord
+---@param name string Menu name
+---@param options table Array of option strings
+---@param w number Width of menu
+---@param func function On select function. function(index, option)
+---@return UiElement menuOption
+function gui.MenuOption(x, name, options, w, func)
+    local o = gui.UiElement()
+    o.x = x
+    o.name = name
+    o.options = options
+    o.w = w
+    o.func = func
+    o.visible = false
+    function o:draw(window)
+        term.setBackgroundColor(colors.gray)
+        term.setTextColor(colors.lightGray)
+        term.setCursorPos(self.x + window.x, 1 + window.y)
+        term.write(self.name)
+        if self.visible then
+            paintutils.drawFilledBox(self.x + window.x, 2 + window.y, self.x + self.w - 1 + window.x,
+                1 + #self.options + window.y)
+            for i, opt in pairs(self.options) do
+                term.setCursorPos(self.x + window.x, 1 + i + window.y)
+                term.write(opt)
+            end
+        end
+    end
+
+    function o:process(event, window)
+        if event[1] == 'mouse_click' then
+            local _, _, x, y = table.unpack(event)
+            x = x - window.x
+            y = y - window.y
+            if y == 1 and x >= self.x and x < self.x + string.len(self.name) then
+                self.visible = not self.visible
+            elseif self.visible and y <= #self.options + 1 then
+                if x > self.x and x < self.x + self.w then
+                    local i = y - 1
+                    self.func(i, self.options[i])
+                end
+            end
+        end
+    end
+
+    return o
+end
+
+---Creates a scrollable field
+---@param x number X coord
+---@param y number Y Coord
+---@param w number Width
+---@param h number Height
+---@return UiElement scrollFeild
+function gui.ScrollField(x, y, w, h)
+    local o = gui.UiElement()
+    o.x = x
+    o.y = y
+    o.w = w
+    o.h = h
+    o.scroll = 0
+    o._elements = {}
+    function o:draw(window)
+        local intWindow = {
+            x = window.x + self.x - 1,
+            y = window.y + self.y - 1 - self.scroll,
+            w = self.w,
+            h = self.h,
+        }
+        for _, el in pairs(self._elements) do
+            if not ( (el.y <= self.scroll and el.y+el.h-1 <= self.scroll) or (el.y > self.h + self.scroll and el.y+el.h-1 > self.h + self.scroll) ) then
+                el:draw(intWindow)
+            end
+        end
+    end
+    function o:process(event, window)
+        if event[1] == 'mouse_scroll' then
+            local _, dir, x, y = table.unpack(event)
+            x = x - window.x
+            y = y - window.y
+            if gui.inBox(window, self.x, self.y, self.w, self.h, x, y) then
+                self.scroll = self.scroll + dir
+                local max = 0
+                for _, el in pairs(self._elements) do
+                    -- log:debug(el.x + el.h - 1)
+                    max = math.max(max, el.x + el.h - 1)
+                end
+                -- log:debug(max)
+                max = math.max(0, max - self.h)
+                -- log:debug(max)
+                if self.scroll < 0 then
+                    self.scroll = 0
+                elseif self.scroll > max then
+                    self.scroll = max
+                end
+            end
+        end
+        local intWindow = {
+            x = window.x + self.x - 1,
+            y = window.y + self.y - self.scroll - 1,
+            w = self.w,
+            h = self.h,
+        }
+        for _, el in pairs(self._elements) do
+            el:process(event, intWindow)
+        end
+    end
+    function o:addElement(element)
+        table.insert(self._elements, element)
+    end
+    function o:removeElement(index)
+        table.remove(self._elements, index)
+    end
+    return o
+end
+
+_gui.windows = {}
+---Add a window to gui system
+---@param window Window Window (from Window())
+---@return integer id Window id
+function gui.addWindow(window)
+    table.insert(_gui.windows, window)
+    return #_gui.windows
+end
+---INTERNAL | Redraws all windows in system
+function gui.redrawWindows()
+    for _, window in pairs(_gui.windows) do
+        if window.visible then window:draw() end
+    end
+end
+---INTERNAL | Processes and event for all windows in system
+---@param event table Event table
+function gui.processWindows(event)
+    for _,window in pairs(_gui.windows) do
+        if window.visible then window:process(event) end
+    end
+end
+
+---If window system is running. Set to false to stop running
+gui.running = false
+---Run window draw and process loop. Runs until pos.gui.running is set to false
+---@param func function Event function. function(eventTable)
+function gui.run(func)
+    gui.running = true
+    while gui.running do
+        local event = { os.pullEventRaw() }
+        if event[1] == 'terminate' then
+            gui.running = false
+            break
+        end
+        term.setBackgroundColor(colors.black)
+        term.setTextColor(colors.white)
+        term.clear()
+        gui.processWindows(event)
+        func(event)
+        gui.redrawWindows()
+    end
+    term.setBackgroundColor(colors.black)
+    term.setTextColor(colors.white)
+    term.clear()
+    term.setCursorPos(1, 1)
+end
+
+local classes = {
+    'Window',
+    'UiElement',
+    'TextBox'
+}
+for _,class in pairs(classes) do
+    shell.run('/os/gui/'..class..'.lua')
+end

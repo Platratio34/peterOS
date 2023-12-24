@@ -1,0 +1,82 @@
+{
+    "files":[
+        "startup.lua",
+        ".settings",
+        "su.userDat",
+        "version.txt",
+
+        "os/init.lua",
+        "os/pgms.json",
+        
+        "os/lib/hash/sha256.lua",
+
+        "os/lib/rttp/base.lua",
+        "os/lib/rttp/client.lua",
+        "os/lib/rttp/exampleClient.lua",
+        "os/lib/rttp/exampleServer.lua",
+        "os/lib/rttp/server.lua",
+        "os/lib/rttp/init.lua",
+
+        "os/lib/rsa/init.lua",
+        "os/lib/rsa/rsa-crypt.lua",
+        "os/lib/rsa/rsa-keygen.lua",
+
+        "os/lib/rttps/base.lua",
+        "os/lib/rttps/client.lua",
+        "os/lib/rttps/server.lua",
+        "os/lib/rttps/msg.lua",
+        "os/lib/rttps/init.lua",
+
+        "os/lib/ecc/ecc.lua",
+        "os/lib/ecc/init.lua",
+
+        "os/lib/tblStore/init.lua",
+
+        "os/lib/config.lua",
+        "os/lib/logger.lua",
+	    "os/lib/strings.lua",
+        "os/lib/string.lua",
+        
+        "os/lib/classes/Logger.lua",
+        "os/lib/classes/Config.lua",
+
+        "os/net/init.lua",
+        "os/net/nat.lua",
+        "os/net/dhcp.lua",
+        "os/net/encrypt.lua",
+        
+        "os/net/rttp/init.lua",
+        "os/net/rttp/simpleServer.lua",
+        
+        "os/net/rtml/init.lua",
+
+        "os/user/LocalUser.lua",
+        "os/user/RemoteUser.lua",
+        
+        "os/gui/gui.lua",
+        "os/gui/Window.lua",
+        "os/gui/UiElement.lua",
+        "os/gui/TextBox.lua",
+        "os/gui/Button.lua",
+        "os/gui/TextInput.lua",
+        "os/gui/MenuOption.lua",
+        "os/gui/ScrollField.lua",
+        "os/gui/FileSelector.lua",
+
+        "os/bin/checkSu.lua",
+        "os/bin/logout.lua",
+        "os/bin/password.lua",
+        "os/bin/pgm-get-complete.lua",
+        "os/bin/pgm-get.lua",
+        "os/bin/su.lua",
+        "os/bin/sudo-complete.lua",
+        "os/bin/sudo.lua",
+        "os/bin/version.lua",
+        "os/bin/osUpdate.lua",
+        "os/bin/ping.lua"
+    ],
+    "pgms":[
+        "pgm-get",
+        "rBrowser"
+    ]
+}
