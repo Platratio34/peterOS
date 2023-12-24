@@ -190,7 +190,7 @@ if not pgCoreF then
     printError('Unable to install pgm-get')
     return
 end
-pgCoreF.write(msgPGCore.readAll())
+pgCoreF.write(rspPGCore.readAll())
 pgCoreF.close()
 shell.run('/os/bin/pgm-get/core.lua')
 
