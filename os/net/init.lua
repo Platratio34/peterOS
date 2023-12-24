@@ -1125,7 +1125,11 @@ net.stringMessage = function(msg)
     else
         str = str .. " | " .. textutils.serialise(msg.header) .. " : "
     end
-    str = str .. textutils.serialise(msg.body)
+    if msg.body.cipher then
+        str = str .. 'cipher = ' ..  textutils.serialise(msg.body.cipher)
+        str = str .. ', sig = ' ..  textutils.serialise(msg.body.sig)
+    end
+    -- str = str .. textutils.serialise(msg.body)
     return str
 end
 
