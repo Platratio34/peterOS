@@ -43,6 +43,8 @@
         "os/net/nat.lua",
         "os/net/dhcp.lua",
         "os/net/encrypt.lua",
+        "os/net/netUpdate.lua",
+        "os/net/cmd.lua",
         
         "os/net/rttp/init.lua",
         "os/net/rttp/simpleServer.lua",
