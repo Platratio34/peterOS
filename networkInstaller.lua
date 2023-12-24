@@ -1,4 +1,4 @@
--- wget run http://peter.crall.family/minecraft/cc/pos/networkInstaller.lua
+-- wget run https://raw.githubusercontent.com/Platratio34/peterOS/master/networkInstaller.lua
 
 local args = {...}
 
@@ -7,7 +7,7 @@ local function cont(_str1, _str2)
 end
 
 local over = 0
-if(args[1] == 'y') then
+if (args[1] == 'y') then
     over = 1
 end
 
@@ -31,7 +31,22 @@ if fs.exists("/os") then
     end
 end
 
-local rsp, msg = http.get("https://peter.crall.family/minecraft/cc/pos/install-manifest.json")
+local repoURL = 'https://raw.githubusercontent.com/Platratio34/peterOS/'
+local newVersion = 'master'
+for i,arg in pairs(args) do
+    if arg == '-v' then
+        if #args < i + 1 then
+            printError('Must specify version after -v')
+            return
+        end
+        newVersion = args[i + 1]
+    end
+end
+local baseURL = repoURL .. newVersion .. '/'
+
+print('Pulling manifest for version '..newVersion)
+
+local rsp, msg = http.get(baseURL.."install-manifest.json")
 
 if rsp == nil then
     printError("HTTP error: "..msg)
@@ -84,7 +99,7 @@ end
 print("Downloading OS files")
 for i=1,#fileManifest.files do
     local fileName = fileManifest.files[i]
-    local fileRsp, error = http.get("https://peter.crall.family/minecraft/cc/pos/"..fileName)
+    local fileRsp, error = http.get(baseURL..fileName)
 
     if fileRsp == nil then
         printError(fileName .." | HTTP error: "..error)
@@ -153,9 +168,24 @@ end
 print("Done downloading OS")
 
 print("Installing pgm-get")
-shell.run("/os/bin/pgm-get", "update")
-shell.run("/os/bin/pgm-get", "install", "pgm-get")
-shell.run("/os/bin/pgm-get", "install", "pgm-get")
+
+local rspPGCore, msgPGCore = http.get('https://raw.githubusercontent.com/peterOS-pgm-get/pgm-get/master/core.lua')
+
+if rspPGCore == nil then
+    printError("HTTP error getting pgm-get: " .. msgPGCore)
+    return
+end
+if rspPGCore.getResponseCode() ~= 200 then
+    printError("HTTP response code " .. rspPGCore.getResponseCode() .. " getting pgm-get; msg: " .. rspPGCore.readAll())
+    return
+end
+local pgCoreF = fs.open('/os/bin/pgm-get/core.lua')
+if not pgCoreF then
+    printError('Unable to install pgm-get')
+    return
+end
+pgCoreF.write(msgPGCore.readAll())
+pgCoreF.close()
 shell.run('/os/bin/pgm-get/core.lua')
 
 print("Installing default programs")
