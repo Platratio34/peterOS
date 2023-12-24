@@ -2,6 +2,9 @@ pos.require("net.rttp")
 -- local Logger = pos.require('logger')
 local log = pos.Logger('/home/.pgmLog/nat.log', false)
 log:setLevel(pos.LoggerLevel.WARN)
+_G.net.nat = {
+    log = log
+}
 
 local cfg = {
     inside = {
