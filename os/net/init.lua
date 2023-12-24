@@ -972,7 +972,7 @@ net.sendAdvSync = function(port, dest, head, body)
     end
     return waitForMsg(function(rPort, message)
         if rPort ~= port then return true end
-        if message.header == head and message.body == body then return true end
+        -- if message.header == head and message.body == body then return true end
         if message.dest == ipAddr then
             if message.msgid == id then
                 return false
