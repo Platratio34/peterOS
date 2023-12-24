@@ -497,7 +497,7 @@ if not (lbl == nil) then
     print(lbl)
 end
 
-local vRsp, vMsg = http.get("https://peter.crall.family/minecraft/cc/pos/version.txt")
+local vRsp, vMsg = http.get("https://raw.githubusercontent.com/Platratio34/peterOS/master/version.txt")
 
 if vRsp == nil then
     log:error("HTTP error: "..vMsg)

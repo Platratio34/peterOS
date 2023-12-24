@@ -1,4 +1,4 @@
--- wget run http://peter.crall.family/minecraft/cc/pos/networkInstaller.lua
+-- wget run https://raw.githubusercontent.com/Platratio34/peterOS/master/networkInstaller.lua
 
 local args = {...}
 
@@ -7,7 +7,7 @@ local function cont(_str1, _str2)
 end
 
 local over = 0
-if(args[1] == 'y') then
+if (args[1] == 'y') then
     over = 1
 end
 
@@ -31,7 +31,23 @@ if fs.exists("/os") then
     end
 end
 
-local rsp, msg = http.get("https://peter.crall.family/minecraft/cc/pos/install-manifest.json")
+local repoURL = 'https://raw.githubusercontent.com/Platratio34/peterOS/'
+local newVersion = 'master'
+for i,arg in pairs(args) do
+    if arg == '-v' then
+        if #args > i + 1 then
+            newVersion = args[i + 1]
+        else
+            printError('Must specify version after -v')
+            return
+        end
+    end
+end
+local baseURL = repoURL .. newVersion .. '/'
+
+print('Pulling manifest for version '..newVersion)
+
+local rsp, msg = http.get(baseURL.."install-manifest.json")
 
 if rsp == nil then
     printError("HTTP error: "..msg)
@@ -84,7 +100,7 @@ end
 print("Downloading OS files")
 for i=1,#fileManifest.files do
     local fileName = fileManifest.files[i]
-    local fileRsp, error = http.get("https://peter.crall.family/minecraft/cc/pos/"..fileName)
+    local fileRsp, error = http.get(baseURL..fileName)
 
     if fileRsp == nil then
         printError(fileName .." | HTTP error: "..error)

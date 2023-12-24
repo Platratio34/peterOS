@@ -1,1 +1,1 @@
-shell.run("wget", "run", "https://peter.crall.family/minecraft/cc/pos/networkInstaller.lua", ...)
+shell.run("wget", "run", "https://raw.githubusercontent.com/Platratio34/peterOS/master/networkInstaller.lua", ...)
