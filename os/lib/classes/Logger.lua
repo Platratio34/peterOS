@@ -16,11 +16,13 @@ _G.pos.LoggerLevel = LoggerLevel
 ---@field private level LoggerLevel Log level (<code>DEBUG</code>-<code>NONE</code>)
 ---@field private file Handle|nil File write handle
 ---@field print boolean If the logger should also print to the shell
+---@field logTime boolean If time should be included in the log
 local Logger = {
     path = '/home/.pgmLog/',
     level = LoggerLevel.DEBUG,
     file = nil,
     print = false,
+    logTime = false,
 }
 
 ---Meta table for logger class
@@ -112,41 +114,55 @@ function Logger:_writeError(str)
         self._errorFile.flush()
     end
     if self.print then
-        print(str)
+        printError(str)
     end
+end
+
+function Logger:getTimeString()
+    if not self.logTime then
+        return ''
+    end
+    local time = os.epoch('utc')
+    time = time / 1000
+    local s = time % 60
+    time = math.floor(time / 60)
+    local m = time % 60
+    time = math.floor(time / 60)
+    local h = time % 24
+    return h..':'..m..':'..s..' | '
 end
 
 ---Logs a <code>DEBUG</code> message
 ---@param message any Debug message
 function Logger:debug(message)
     if self.level < 5 then return end
-    self:write('DEBUG: ' .. tostring(message))
+    self:write('DEBUG: ' .. self:getTimeString() .. tostring(message))
 end
 
 ---Logs an <code>INFO</code> message
 ---@param message any Info message
 function Logger:info(message)
     if self.level < 4 then return end
-    self:write('INFO: ' .. tostring(message))
+    self:write('INFO: ' .. self:getTimeString() .. tostring(message))
 end
 
 ---Logs a <code>WARN</code> message
 ---@param message any Warning message
 function Logger:warn(message)
     if self.level < 3 then return end
-    self:write('WARN: ' .. tostring(message))
+    self:write('WARN: ' .. self:getTimeString() .. tostring(message))
 end
 
 ---Logs an <code>ERROR</code> message
 ---@param message any Error message
 function Logger:error(message)
     if self.level < 2 then return end
-    self:write('ERROR: ' .. tostring(message))
+    self:write('ERROR: ' .. self:getTimeString() .. tostring(message))
 end
 
 ---Logs a <code>FATAL</code> message
 ---@param message any Fatal error message
 function Logger:fatal(message)
     if self.level < 1 then return end
-    self:write('FATAL: ' .. tostring(message))
+    self:write('FATAL: ' .. self:getTimeString() .. tostring(message))
 end
