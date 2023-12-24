@@ -35,12 +35,11 @@ local repoURL = 'https://raw.githubusercontent.com/Platratio34/peterOS/'
 local newVersion = 'master'
 for i,arg in pairs(args) do
     if arg == '-v' then
-        if #args >= i + 1 then
-            newVersion = args[i + 1]
-        else
+        if #args < i + 1 then
             printError('Must specify version after -v')
             return
         end
+        newVersion = args[i + 1]
     end
 end
 local baseURL = repoURL .. newVersion .. '/'
