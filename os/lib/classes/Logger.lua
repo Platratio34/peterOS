@@ -130,7 +130,8 @@ function Logger:getTimeString()
     local m = time % 60
     time = math.floor(time / 60)
     local h = time % 24
-    return h..':'..m..':'..s..'.'..ms..' | '
+    -- return h..':'..m..':'..s..'.'..ms..' | '
+    return ('%02d:%02d:%02d.%04d | '):format(h,m,s,ms)
 end
 
 ---Logs a <code>DEBUG</code> message
