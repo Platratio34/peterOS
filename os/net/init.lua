@@ -416,6 +416,7 @@ local function waitForMsg(check, time)
                         end
                     end
                 end
+                log:debug('Checking msg')
                 cont = check(port, message)
                 if not cont then
                     log:debug('Found message')
