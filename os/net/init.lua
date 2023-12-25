@@ -418,6 +418,7 @@ local function waitForMsg(check, time)
                 end
                 cont = check(port, message)
                 if not cont then
+                    log:debug('Found message')
                     os.cancelTimer(timeout)
                     -- print(net.stringMessage(message))
                     return message
