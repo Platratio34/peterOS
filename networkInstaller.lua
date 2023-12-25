@@ -37,7 +37,7 @@ if _G.user and not user.isSu() then
     return
 end
 
-local cB = '#'..os.epoch('utc') % 60000
+local cB = '?'..os.epoch('utc') % 60000
 local repoURL = 'https://raw.githubusercontent.com/Platratio34/peterOS/'
 local newVersion = 'master'
 for i,arg in pairs(args) do
