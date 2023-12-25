@@ -6,6 +6,7 @@ if _G.user and not user.isSu() then
     return
 end
 
+local cB = '#'..os.epoch('utc') % 60000
 local baseURL = 'https://raw.githubusercontent.com/Platratio34/peterOS/master/os/net/'
 local fileNames = {
     'init.lua',
@@ -14,7 +15,7 @@ local fileNames = {
     'dhcp.lua'
 }
 for _, fileName in pairs(fileNames) do
-    local rsp, msg = http.get(baseURL .. fileName)
+    local rsp, msg = http.get(baseURL .. fileName.. cB)
     if rsp == nil then
         printError(fileName .. " | HTTP error: " .. msg)
         print("Terminating update")

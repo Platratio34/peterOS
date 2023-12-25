@@ -37,6 +37,7 @@ if _G.user and not user.isSu() then
     return
 end
 
+local cB = '#'..os.epoch('utc') % 60000
 local repoURL = 'https://raw.githubusercontent.com/Platratio34/peterOS/'
 local newVersion = 'master'
 for i,arg in pairs(args) do
@@ -52,7 +53,7 @@ local baseURL = repoURL .. newVersion .. '/'
 
 print('Pulling manifest for version '..newVersion)
 
-local rsp, msg = http.get(baseURL.."install-manifest.json")
+local rsp, msg = http.get(baseURL.."install-manifest.json" .. cB)
 
 if rsp == nil then
     printError("HTTP error: "..msg)
@@ -105,7 +106,7 @@ end
 print("Downloading OS files")
 for i=1,#fileManifest.files do
     local fileName = fileManifest.files[i]
-    local fileRsp, error = http.get(baseURL..fileName)
+    local fileRsp, error = http.get(baseURL..fileName .. cB)
 
     if fileRsp == nil then
         printError(fileName .." | HTTP error: "..error)
@@ -175,7 +176,7 @@ print("Done downloading OS")
 
 print("Installing pgm-get")
 
-local rspPGCore, msgPGCore = http.get('https://raw.githubusercontent.com/peterOS-pgm-get/pgm-get/master/core.lua')
+local rspPGCore, msgPGCore = http.get('https://raw.githubusercontent.com/peterOS-pgm-get/pgm-get/master/core.lua' .. cB)
 
 if rspPGCore == nil then
     printError("HTTP error getting pgm-get: " .. msgPGCore)
