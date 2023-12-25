@@ -349,7 +349,9 @@ local function waitForMsg(check, time)
     time = time or 2
     local cont = true
     for i, message in pairs(messages) do
+        log:debug('Checking msg')
         if not check(message.port, message.msg) then
+            log:debug('Found message')
             table.remove(messages, i)
             -- print("Message gotten from stored messages")
             return message.msg
@@ -364,6 +366,7 @@ local function waitForMsg(check, time)
         local event = { os.pullEvent() }
         if event[1] == "net_message" then
             local _, message = unpack(event)
+            ---@cast message NetMessage
             local port = message.port
             -- print(net.stringMessage(message))
             -- print("MSG "..net.ipFormat(message.origin).." '"..message.header.type.."'")
