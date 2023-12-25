@@ -924,16 +924,19 @@ net.sendSync = function(port, dest, msgType, body)
     end
     log:debug(("Waiting for reply w/ id `%d`"):format(id))
     return waitForMsg(function(rPort, message)
-        if rPort ~= port then return true end
+        if rPort ~= port then
+            log:debug(('p `%d` != `%d`'):format(rPort, port))
+            return true
+        end
         if message.dest == ipAddr then
             if message.msgid == id then
-                log:debug('= Found message')
+                log:debug('- Found message')
                 return false
             else
-                log:debug(('- `%d` != `%d`'):format(message.msgid, id))
+                log:debug(('i `%d` != `%d`'):format(message.msgid, id))
             end
         else
-            log:debug(('+ `%s` != `%s`'):format(message.dest, ipAddr))
+            log:debug(('d `%s` != `%s`'):format(message.dest, ipAddr))
         end
         return true
     end, 2)
@@ -978,17 +981,20 @@ net.sendAdvSync = function(port, dest, head, body)
     end
     log:debug(("Waiting for reply w/ id `%d`"):format(id))
     return waitForMsg(function(rPort, message)
-        if rPort ~= port then return true end
+        if rPort ~= port then
+            log:debug(('p `%d` != `%d`'):format(rPort, port))
+            return true
+        end
         -- if message.header == head and message.body == body then return true end
         if message.dest == ipAddr then
             if message.msgid == id then
-                log:debug('= Found message')
+                log:debug('- Found message')
                 return false
             else
-                log:debug(('- `%d` != `%d`'):format(message.msgid, id))
+                log:debug(('i `%d` != `%d`'):format(message.msgid, id))
             end
         else
-            log:debug(('+ `%s` != `%s`'):format(message.dest, ipAddr))
+            log:debug(('d `%s` != `%s`'):format(message.dest, ipAddr))
         end
         return true
     end, 2)
