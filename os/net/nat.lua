@@ -211,6 +211,7 @@ local function handlerFunc(side, port, msg)
         if not (messages[conId] and messages[conId][msg.msgid]) then            -- if the message is NOT a response to an outgoing message
             if msg.header.domain == nil or msg.header.domain == cfg.domain then -- if the message is for the NAT itself
                 log:info("External message for NAT: " .. net.stringMessage(msg))
+                return
             end
 
             local forward = nil

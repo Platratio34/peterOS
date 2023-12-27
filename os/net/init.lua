@@ -37,7 +37,8 @@ end
 local cfgPath = "/home/.appdata/net.cfg"
 -- Network configuration object
 local cfg = {
-    hostname = ""
+    hostname = "",
+    respondToPing = true,
 }
 local config = pos.Config(cfgPath, cfg, true)
 cfg = config.data
@@ -573,7 +574,7 @@ os.pullEventRaw = function(sFilter)
                     onMsg(msg)
                 elseif msg.dest == ipAddr then
                     logVerboseMessage('recv: ' .. net.stringMessage(msg))
-                    if port == net.standardPorts.network and msg.header.type == "ping" then
+                    if port == net.standardPorts.network and msg.header.type == "ping" and cfg.respondToPing then
                         net.reply(net.standardPorts.network, msg, { type = "ping-return" }, {})
                         log:debug("Got pinged by " .. net.ipFormat(msg.origin))
                     end
