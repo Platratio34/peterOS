@@ -64,11 +64,13 @@ function Window:draw()
     -- pos.gui._log:debug('showing window '..self._name)
     paintutils.drawFilledBox(1 + self.x, 1 + self.y, self.w + self.x, self.h + self.y, self.bg)
     for _, el in pairs(self._elements) do
-        -- pos.gui._log:debug('drawing '..el.type)
-        el:draw(self)
-        -- if el.type == 'button' then
-        --     pos.gui._log:debug('+drawing btn '..el.text)
-        -- end
+        if el.visible then
+            -- pos.gui._log:debug('drawing '..el.type)
+            el:draw(self)
+            -- if el.type == 'button' then
+            --     pos.gui._log:debug('+drawing btn '..el.text)
+            -- end
+        end
     end
     term.setBackgroundColor(colors.gray)
     if not self.hideNameBar then

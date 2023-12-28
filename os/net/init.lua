@@ -443,181 +443,162 @@ end
 net.ignoreMsgOnDecryptFail = true
 local processedMessages = {}
 local waitingForAccept = false
-local osPullEventRaw = os.pullEventRaw
-os.pullEventRaw = function(sFilter)
-    -- print("Waiting . . .")
-    -- if sFilter ~= nil then
-    --     print("- For '"..sFilter.."'")
-    -- end
-    while true do
-        local event = { osPullEventRaw() }
-        if event[1] == "modem_message" then
-            -- print("Got Modem Msg")
-            local _, _, port, _, msg, _ = unpack(event)
-            local ps, pe = pcall(function()
-                if not net.validMsg(port, msg) then
-                    return
-                end
-                ---@cast msg NetMessage
-                
-                local origin = msg.origin
-                if msg.header.conId then
-                    origin = origin .. msg.header.conId
-                end
-                if msg.header.originDomain then
-                    origin = msg.header.originDomain ---@cast origin string
-                end
-                
-                if processedMessages[origin .. msg.msgid] then -- we already determined that this message was bad
-                    return
-                end
-                
-                processedMessages[origin..msg.msgid] = true
-                
-                if msg.header.publicKey then
-                    -- log:debug('Received message w/ public key')
+-- local osPullEventRaw = os.pullEventRaw
+-- os.pullEventRaw = function(sFilter)
+local function eventHandler(event)
+    -- print("Got Modem Msg")
+    local _, _, port, _, msg, _ = unpack(event)
+    local ps, pe = pcall(function()
+        if not net.validMsg(port, msg) then
+            return
+        end
+        ---@cast msg NetMessage
 
-                    if not remoteKeys[origin] then
-                        remoteKeys[origin] = msg.header.publicKey
-                    else
-                        local eq = true
-                        for i, v in pairs(remoteKeys[origin]) do
-                            if msg.header.publicKey[i] ~= v then
-                                eq = false
-                                break
-                            end
-                        end
-                        if not eq then
-                            log:warn('Received message from ' .. origin .. ' but public key does to match cached version')
-                            log:debug(textutils.serialiseJSON(remoteKeys[origin]))
-                            log:debug('vs')
-                            log:debug(textutils.serialiseJSON(msg.header.publicKey))
-                            
-                            -- prevent bad version of message from getting through
+        local origin = msg.origin
+        if msg.header.conId then
+            origin = origin .. msg.header.conId
+        end
+        if msg.header.originDomain then
+            origin = msg.header.originDomain ---@cast origin string
+        end
+
+        if processedMessages[origin .. msg.msgid] then -- we already determined that this message was bad
+            return
+        end
+
+        processedMessages[origin .. msg.msgid] = true
+
+        if msg.header.publicKey then
+            -- log:debug('Received message w/ public key')
+
+            if not remoteKeys[origin] then
+                remoteKeys[origin] = msg.header.publicKey
+            else
+                local eq = true
+                for i, v in pairs(remoteKeys[origin]) do
+                    if msg.header.publicKey[i] ~= v then
+                        eq = false
+                        break
+                    end
+                end
+                if not eq then
+                    log:warn('Received message from ' .. origin .. ' but public key does to match cached version')
+                    log:debug(textutils.serialiseJSON(remoteKeys[origin]))
+                    log:debug('vs')
+                    log:debug(textutils.serialiseJSON(msg.header.publicKey))
+
+                    -- prevent bad version of message from getting through
+                    return
+                end
+            end
+
+            if msg.header.encrypted then
+                if not msg.body then
+                    log:warn('Received message marked as encrypted from ' ..
+                        net.ipFormat(msg.origin) .. ', but did not have body (msgid=' .. msg.msgid .. ')')
+                elseif not msg.body.cipher then
+                    log:warn('Received message marked as encrypted from ' ..
+                        net.ipFormat(msg.origin) .. ', but did not have cipher in body (msgid=' .. msg.msgid .. ')')
+                elseif not msg.body.sig then
+                    log:warn('Received message marked as encrypted from ' ..
+                        net.ipFormat(msg.origin) .. ', but did not have signature in body (msgid=' .. msg.msgid .. ')')
+                else
+                    local suc, body = net.encrypt.decrypt(msg.body.cipher, msg.body.sig,
+                        msg.header.publicKey)
+                    if suc then
+                        if not body then
+                            log:warn('Failed to decrypt msg from ' ..
+                                net.ipFormat(msg.origin) .. ', body was malformed')
                             return
                         end
-                    end
-
-                    if msg.header.encrypted then
-                        if not msg.body then
-                            log:warn('Received message marked as encrypted from ' ..
-                            net.ipFormat(msg.origin) .. ', but did not have body (msgid=' .. msg.msgid .. ')')
-                        elseif not msg.body.cipher then
-                            log:warn('Received message marked as encrypted from ' ..
-                            net.ipFormat(msg.origin) .. ', but did not have cipher in body (msgid=' .. msg.msgid .. ')')
-                        elseif not msg.body.sig then
-                            log:warn('Received message marked as encrypted from ' ..
-                            net.ipFormat(msg.origin) .. ', but did not have signature in body (msgid=' .. msg.msgid .. ')')
-                        else
-                            local suc, body = net.encrypt.decrypt(msg.body.cipher, msg.body.sig,
-                                msg.header.publicKey)
-                            if suc then
-                                if not body then
-                                    log:warn('Failed to decrypt msg from ' ..
-                                        net.ipFormat(msg.origin) .. ', body was malformed')
-                                    return
-                                end
-                                msg.body = body
-                                logVerboseMessage('decrypted msg from ' .. net.ipFormat(msg.origin))
-                                if msg.body.cipher then
-                                    log:warn('Message had a cipher element in body')
-                                end
-                            else
-                                log:warn('Failed to decrypt msg from ' .. net.ipFormat(msg.origin))
-                                if net.ignoreMsgOnDecryptFail then return end
-                            end
+                        msg.body = body
+                        logVerboseMessage('decrypted msg from ' .. net.ipFormat(msg.origin))
+                        if msg.body.cipher then
+                            log:warn('Message had a cipher element in body')
                         end
-                    elseif msg.body and msg.body.cipher then
-                        log:warn("Message had cipher body but was not encrypted")
-                    end
-                end
-
-                if msg.dest == "hw:" .. hwAddr then
-                    logVerboseMessage('recv: ' .. net.stringMessage(msg))
-                    -- print("msg for hw '"..msg.header.type.."'")
-                    if msg.header.type == "net.ip.acp.return" then
-                        if waitingForAccept then
-                            log:info('DHCP accept')
-                            print("DHCP accept")
-                            ipAddr = msg.body.ip
-                            ipMask = msg.body.mask
-                            leaseTime = msg.body.time
-                            addrTbl = msg.body.addrTbl
-                            dhcpIP = tonumber(msg.origin) or dhcpIP
-                            waitingForAccept = false
-                        else
-                            -- print("Not waiting for accept return")
-                        end
-                    elseif msg.header.type == "net.ip.req.return" then
-                        if ipAddr == 0x0 and not waitingForAccept then
-                            waitingForAccept = true
-                            -- ipAddr = msg.body.ip
-                            -- ipMask = msg.body.mask
-                            -- leaseTime = msg.body.time
-                            log:info("Accepting IP offer of " ..
-                                net.ipFormat(msg.body.ip) .. " from " .. net.ipFormat(msg.origin))
-                            print("Accepting IP offer of " ..
-                                net.ipFormat(msg.body.ip) .. " from " .. net.ipFormat(msg.origin))
-                            -- print(net.stringMessage(msg))
-                            -- net.reply(10000, msg, { type = "net.ip.acp" }, { hwAddr = hwAddr })
-                            local hn = cfg.hostname ---@type string|nil
-                            sendMsg(10000, msg.origin, { type = "net.ip.acp" }, { hwAddr = hwAddr })
-                        else
-                            -- print("already had IP or waiting on accept")
-                        end
-                    end
-                    function msg:reply(p, head, body)
-                        net.reply(p, self, head, body)
-                    end
-
-                    os.queueEvent("net_message", msg)
-                    onMsg(msg)
-                elseif msg.dest == ipAddr then
-                    logVerboseMessage('recv: ' .. net.stringMessage(msg))
-                    if port == net.standardPorts.network and msg.header.type == "ping" and cfg.respondToPing then
-                        net.reply(net.standardPorts.network, msg, { type = "ping-return" }, {})
-                        log:debug("Got pinged by " .. net.ipFormat(msg.origin))
-                    end
-                    if msg.header.type == "net.ip.check" then
-                        net.reply(net.standardPorts.network, msg, { type = "net.ip.found" }, { hwAddr = hwAddr })
                     else
-                        function msg:reply(p, head, body)
-                            net.reply(p, self, head, body)
-                        end
-
-                        os.queueEvent("net_message", msg)
-                        onMsg(msg)
+                        log:warn('Failed to decrypt msg from ' .. net.ipFormat(msg.origin))
+                        if net.ignoreMsgOnDecryptFail then return end
                     end
-                elseif msg.dest == -1 then
-                    logVerboseMessage('recv: ' .. net.stringMessage(msg))
-                    -- print("Broadcast MSG from "..net.ipFormat(msg.origin).." of type '"..msg.header.type.."'")
-                    function msg:reply(p, head, body)
-                        net.reply(p, self, head, body)
-                    end
-
-                    os.queueEvent("net_message", msg)
-                    onMsg(msg)
                 end
-            end)
-            if not ps then
-                log:error(pe)
-                printError(pe)
+            elseif msg.body and msg.body.cipher then
+                log:warn("Message had cipher body but was not encrypted")
             end
-        else
-            -- print("Got "..event[1])
         end
-        if sFilter == nil or sFilter == event[1] then
-            return unpack(event)
+
+        if msg.dest == "hw:" .. hwAddr then
+            logVerboseMessage('recv: ' .. net.stringMessage(msg))
+            -- print("msg for hw '"..msg.header.type.."'")
+            if msg.header.type == "net.ip.acp.return" then
+                if waitingForAccept then
+                    log:info('DHCP accept')
+                    print("DHCP accept")
+                    ipAddr = msg.body.ip
+                    ipMask = msg.body.mask
+                    leaseTime = msg.body.time
+                    addrTbl = msg.body.addrTbl
+                    dhcpIP = tonumber(msg.origin) or dhcpIP
+                    waitingForAccept = false
+                else
+                    -- print("Not waiting for accept return")
+                end
+            elseif msg.header.type == "net.ip.req.return" then
+                if ipAddr == 0x0 and not waitingForAccept then
+                    waitingForAccept = true
+                    -- ipAddr = msg.body.ip
+                    -- ipMask = msg.body.mask
+                    -- leaseTime = msg.body.time
+                    log:info("Accepting IP offer of " ..
+                        net.ipFormat(msg.body.ip) .. " from " .. net.ipFormat(msg.origin))
+                    print("Accepting IP offer of " ..
+                        net.ipFormat(msg.body.ip) .. " from " .. net.ipFormat(msg.origin))
+                    -- print(net.stringMessage(msg))
+                    -- net.reply(10000, msg, { type = "net.ip.acp" }, { hwAddr = hwAddr })
+                    local hn = cfg.hostname ---@type string|nil
+                    sendMsg(10000, msg.origin, { type = "net.ip.acp" }, { hwAddr = hwAddr })
+                else
+                    -- print("already had IP or waiting on accept")
+                end
+            end
+            function msg:reply(p, head, body)
+                net.reply(p, self, head, body)
+            end
+
+            os.queueEvent("net_message", msg)
+            onMsg(msg)
+        elseif msg.dest == ipAddr then
+            logVerboseMessage('recv: ' .. net.stringMessage(msg))
+            if port == net.standardPorts.network and msg.header.type == "ping" and cfg.respondToPing then
+                net.reply(net.standardPorts.network, msg, { type = "ping-return" }, {})
+                log:debug("Got pinged by " .. net.ipFormat(msg.origin))
+            end
+            if msg.header.type == "net.ip.check" then
+                net.reply(net.standardPorts.network, msg, { type = "net.ip.found" }, { hwAddr = hwAddr })
+            else
+                function msg:reply(p, head, body)
+                    net.reply(p, self, head, body)
+                end
+
+                os.queueEvent("net_message", msg)
+                onMsg(msg)
+            end
+        elseif msg.dest == -1 then
+            logVerboseMessage('recv: ' .. net.stringMessage(msg))
+            -- print("Broadcast MSG from "..net.ipFormat(msg.origin).." of type '"..msg.header.type.."'")
+            function msg:reply(p, head, body)
+                net.reply(p, self, head, body)
+            end
+
+            os.queueEvent("net_message", msg)
+            onMsg(msg)
         end
+    end)
+    if not ps then
+        log:error(pe)
+        printError(pe)
     end
 end
-os.pullEvent = function(sFilter)
-    local event = { os.pullEventRaw(sFilter) }
-    if event[1] == "terminate" then
-        error("Terminating", 0)
-    end
-    return unpack(event)
-end
+local handlerId = pos.addEventHandler(eventHandler, 'modem_message')
 
 -- +------------------------+
 -- | Modem Helper Functions |

@@ -38,6 +38,7 @@
         
         "os/lib/classes/Logger.lua",
         "os/lib/classes/Config.lua",
+        "os/lib/classes/Parser.lua",
 
         "os/net/init.lua",
         "os/net/nat.lua",
@@ -62,6 +63,7 @@
         "os/gui/TextInput.lua",
         "os/gui/MenuOption.lua",
         "os/gui/ScrollField.lua",
+        "os/gui/ListField.lua",
         "os/gui/FileSelector.lua",
 
         "os/bin/checkSu.lua",
