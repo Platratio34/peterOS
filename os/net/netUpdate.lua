@@ -6,7 +6,7 @@ if _G.user and not user.isSu() then
     return
 end
 
-local cB = '?'..os.epoch('utc') % 60000
+local cB = '?cb='..os.epoch('utc') % 60000
 local baseURL = 'https://raw.githubusercontent.com/Platratio34/peterOS/master/os/net/'
 local fileNames = {
     'init.lua',
