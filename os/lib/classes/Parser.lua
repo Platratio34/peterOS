@@ -34,7 +34,7 @@ function Parser:parse(args)
             local val = true ---@type any
             if arg:cont('=') then
                 local i = arg:find('=')
-                name = arg:sub(name, i - 1)
+                name = arg:sub(2, i - 1)
                 val = arg:sub(i + 1)
                 if val == 'true' then
                     val = true
