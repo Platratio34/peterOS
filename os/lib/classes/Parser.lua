@@ -9,7 +9,7 @@ local Parser = {
 
 ---Create a new parser
 ---@return Parser
-function clParse.Parser()
+function pos.Parser()
     local o = {}
     setmetatable(o, { __index = Parser })
     return o
@@ -65,10 +65,6 @@ function Parser:addFlag(name, short)
     }
     self.flags[name] = flag
     self.flags[short] = flag
-end
-
-function clParse.parse(args)
-    return clParse.Parser():parse(args)
 end
 
 ---@class CLFlag
