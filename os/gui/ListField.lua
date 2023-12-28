@@ -37,11 +37,12 @@ function ListField:draw(window)
     paintutils.drawFilledBox(window.x + self.x, window.y + self.y, self.w + window.x + self.x - 1, self.h + window.y + self.y - 1, self.bg)
     local y = 1
     for i, el in pairs(self._elements) do
-        el.y = y
-        y = y + 1
-        if not ((el.y + el.h - 1 <= self.scroll) or (el.y > self.h + self.scroll --[[ and el.y + el.h - 1 > self.h + self.scroll]])) then
-            -- pos.gui._log:info(i)
-            el:draw(intWindow)
+        if el.visible then
+            el.y = y
+            if not ((el.y + el.h - 1 <= self.scroll) or (el.y > self.h + self.scroll --[[ and el.y + el.h - 1 > self.h + self.scroll]])) then
+                el:draw(intWindow)
+            end
+            y = y + el.h
         end
     end
 end

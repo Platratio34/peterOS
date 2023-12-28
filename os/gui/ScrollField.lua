@@ -36,7 +36,7 @@ function ScrollField:draw(window)
     }
     paintutils.drawFilledBox(window.x + self.x, window.y + self.y, self.w + window.x + self.x - 1, self.h + window.y + self.y - 1, self.bg)
     for i, el in pairs(self._elements) do
-        if not ((el.y + el.h - 1 <= self.scroll) or (el.y > self.h + self.scroll --[[ and el.y + el.h - 1 > self.h + self.scroll]])) then
+        if el.visible and not ((el.y + el.h - 1 <= self.scroll) or (el.y > self.h + self.scroll --[[ and el.y + el.h - 1 > self.h + self.scroll]])) then
             -- pos.gui._log:info(i)
             el:draw(intWindow)
         end
