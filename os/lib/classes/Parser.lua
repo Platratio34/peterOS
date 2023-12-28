@@ -24,7 +24,7 @@ function Parser:parse(args)
     for _,arg in pairs(args) do
         if temp then
             if arg:sub(-1) == '"' then
-                cArgs:insert(temp..arg:sub(1,-2))
+                table.insert(cArgs,temp..arg:sub(1,-2))
                 temp = nil
             else
                 temp = temp .. arg
@@ -51,7 +51,7 @@ function Parser:parse(args)
         elseif arg:sub(1,1) == '"' then
             temp = arg:sub(2)
         else
-            cArgs:insert(arg)
+            table.insert(cArgs,arg)
         end
     end
 
