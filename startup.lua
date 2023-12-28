@@ -506,7 +506,12 @@ local function pullEventRaw(sFilter)
         local eType = event[1]
 
         for _, eHandler in pairs(eventHandlers) do
-            eHandler:try(eType, event)
+            local s, r = pcall(function()
+                eHandler:try(eType, event)
+            end)
+            if not s then
+                log:error(('Event handler error: %s'):format(r))
+            end
         end
         
         if not sFilter or sFilter == eType then
