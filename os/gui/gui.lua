@@ -190,7 +190,7 @@ function gui.focusWindow(window)
     end
     table.insert(_gui.windowOrder, 1, window)
 end
----Unfocuse window
+---Unfocus window
 ---@param window Window|number  window or window index
 function gui.unfocuseWindow(window)
     if type(window) == 'table' then
@@ -227,7 +227,7 @@ function gui.run(func)
         local s, e = pcall(gui.processWindows, event)
         if not s then
             gui.running = false
-            log:fatal('Encounterd error in proccessing windows:')
+            log:fatal('Encountered error in processing windows:')
             log:fatal(e)
             table.insert(_gui.lError, 'Process Error:')
             table.insert(_gui.lError, e)
@@ -236,7 +236,7 @@ function gui.run(func)
             s, e = pcall(func, event)
             if not s then
                 gui.running = false
-                log:fatal('Encounterd error in event function:')
+                log:fatal('Encountered error in event function:')
                 log:fatal(e)
                 table.insert(_gui.lError, e)
             end
@@ -247,7 +247,7 @@ function gui.run(func)
         s, e = pcall(gui.redrawWindows)
         if not s then
             gui.running = false
-            log:fatal('Encounterd error in drawing windows:')
+            log:fatal('Encountered error in drawing windows:')
             log:fatal(e)
             table.insert(_gui.lError, 'Draw Error:')
             table.insert(_gui.lError, e)
