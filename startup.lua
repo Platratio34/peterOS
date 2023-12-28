@@ -487,6 +487,7 @@ function pos.addEventHandler(handler, filter)
         handler = handler,
         filter = filter
     }
+    setmetatable(eventHandler, { __index = EventHandler })
     eventHandlers[ehId] = eventHandler
     return ehId
 end
