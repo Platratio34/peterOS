@@ -911,11 +911,14 @@ end
 ---@param dest NetAddress|string Destination IP address, HW address, or hostname
 ---@param msgType string Message type
 ---@param body any Message body
+---@param timeout nil|number Reply timeout in seconds (default is 2 seconds, set to -1 to disable)
 ---@return NetMessage|string rsp Response message, or error string
-net.sendSync = function(port, dest, msgType, body)
+net.sendSync = function(port, dest, msgType, body, timeout)
     expect(1, port, "number")
     expect(2, dest, "number", "string")
     expect(3, msgType, "string")
+    expect(4, timeout, "nil", "number")
+    timeout = timeout or 2
 
     if not net.setup() then
         return "setup_fail"
@@ -971,11 +974,14 @@ end
 ---@param dest NetAddress|string Destination IP address, HW address, or hostname
 ---@param head NetMessage.Header Message header, should include type parameter
 ---@param body any Message body
+---@param timeout nil|number Reply timeout in seconds (default is 2 seconds, set to -1 to disable)
 ---@return NetMessage|string rsp Response message, or error string
-net.sendAdvSync = function(port, dest, head, body)
+net.sendAdvSync = function(port, dest, head, body, timeout)
     expect(1, port, "number")
     expect(2, dest, "number", "string")
     expect(3, head, "table")
+    expect(4, timeout, "nil", "number")
+    timeout = timeout or 2
 
     if not net.setup() then
         return "setup_fail"

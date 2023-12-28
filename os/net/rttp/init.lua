@@ -46,8 +46,9 @@ end
 ---@param contentType string Content type (none, <code>text/plain</code>, <code>table/rtml</code>, ...)
 ---@param body any Message body
 ---@param cookies nil|table Optional. Cookie table
+---@param timeout nil|number Reply timeout in seconds (default is 2 seconds, set to -1 to disable)
 ---@return string|RttpMessage rsp Response message, or error string
-rttp.sendSync = function(dest, path, method, contentType, body, cookies)
+rttp.sendSync = function(dest, path, method, contentType, body, cookies, timeout)
     expect(1, dest, "string", "number")
     expect(2, path, "string")
     expect(3, method, "string")
@@ -61,7 +62,7 @@ rttp.sendSync = function(dest, path, method, contentType, body, cookies)
         path = path,
         cookies = cookies
     }
-    local msg = net.sendAdvSync(10080, dest, head, body)
+    local msg = net.sendAdvSync(10080, dest, head, body, timeout)
     ---@cast msg RttpMessage
     return msg
 end
@@ -288,9 +289,10 @@ end
 ---@param dest string|integer Destination hostname, IP address, or HW address
 ---@param path string URI path
 ---@param cookies nil|table Optional. Cookie table
+---@param timeout nil|number Reply timeout in seconds (default is 2 seconds, set to -1 to disable)
 ---@return string|RttpMessage rsp Response message, or error string
-rttp.getSync = function(dest, path, cookies)
-    return rttp.sendSync(dest, path, "GET", "none", {}, cookies)
+rttp.getSync = function(dest, path, cookies, timeout)
+    return rttp.sendSync(dest, path, "GET", "none", {}, cookies, timeout)
 end
 ---Sends a POST message
 ---@param dest string|integer Destination hostname, IP address, or HW address
@@ -308,9 +310,10 @@ end
 ---@param cType string Content type (none, text/plain, table/rtml, ...)
 ---@param body any Message body
 ---@param cookies nil|table Optional. Cookie table
+---@param timeout nil|number Reply timeout in seconds (default is 2 seconds, set to -1 to disable)
 ---@return string|RttpMessage rsp Response message, or error string
-rttp.postSync = function(dest, path, cType, body, cookies)
-    return rttp.sendSync(dest, path, "POST", cType, body, cookies)
+rttp.postSync = function(dest, path, cType, body, cookies, timeout)
+    return rttp.sendSync(dest, path, "POST", cType, body, cookies, timeout)
 end
 
 ---@class RttpMessage : NetMessage RTTP message struct
