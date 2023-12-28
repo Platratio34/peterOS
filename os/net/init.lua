@@ -948,7 +948,7 @@ net.sendSync = function(port, dest, msgType, body, timeout)
             log:debug(('d `%s` != `%s`'):format(message.dest, ipAddr))
         end
         return true
-    end, 2)
+    end, timeout)
 end
 
 ---Send a message with a custom header. Header should include a 'type' parameter.
@@ -1009,7 +1009,7 @@ net.sendAdvSync = function(port, dest, head, body, timeout)
             log:debug(('d `%s` != `%s`'):format(message.dest, ipAddr))
         end
         return true
-    end, 2)
+    end, timeout)
 end
 
 ---Reply to a message
