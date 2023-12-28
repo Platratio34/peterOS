@@ -1,18 +1,18 @@
 ---@package pos.gui
 ---@class ListField : UiElement Basic text input box
 ---@field scroll number Current scroll position
----@field private _elements UiElement[] List of all elements drawn inside the scroll field
+---@field private _elements UiElement[] List of all elements drawn inside the list field
 ---@field private __elementIndex number Index of last added element
----@field type string Override. UiElement type field: <code class=string>'ScrollField'</code>
+---@field type string Override. UiElement type field: <code class=string>'ListField'</code>
 local ListField = {
     scroll = 0,
     _elements = {},
     __elementIndex = 0,
-    type = 'ScrollField'
+    type = 'ListField'
 }
 setmetatable(ListField, { __index = pos.gui.mt.UiElement })
 
----Initializes the scroll field
+---Initializes the list field
 ---@param x number X position
 ---@param y number Y position
 ---@param w number Width
@@ -25,8 +25,8 @@ function ListField:__init__(x, y, w, h)
     self.h = h
 end
 
----Override. Draws the scroll field and all sub elements
----@param window Window Window the scroll field is drawn in
+---Override. Draws the list field and all sub elements
+---@param window Window Window the list field is drawn in
 function ListField:draw(window)
     local intWindow = {
         x = window.x + self.x - 1,
@@ -45,9 +45,9 @@ function ListField:draw(window)
         end
     end
 end
----Override. Processes <code>mouse_scroll</code> events for the scroll field
+---Override. Processes <code>mouse_scroll</code> events for the list field
 ---@param event table Event table
----@param window Window The window the scroll field is processed in
+---@param window Window The window the list field is processed in
 function ListField:process(event, window)
     if event[1] == 'mouse_scroll' then
         local _, dir, x, y = unpack(event)
@@ -83,34 +83,34 @@ function ListField:process(event, window)
     end
 end
 
----Add a element to the scroll field
+---Add a element to the list field
 ---@param element UiElement Element to add
----@return number index Element index in the scroll field
+---@return number index Element index in the list field
 function ListField:addElement(element)
     local index = self.__elementIndex
     self._elements[index] = element
     self.__elementIndex = self.__elementIndex + 1
     return index
 end
----Remove an element from the scroll field by index
+---Remove an element from the list field by index
 ---@param index number Index of element to remove
 function ListField:removeElement(index)
     self._elements[index] = nil
 end
----Clears all elements from scroll field. Next element will be id 0
+---Clears all elements from list field. Next element will be id 0
 function ListField:clearElements()
     self._elements = {}
     self.__elementIndex = 0
     self.scroll = 0
 end
 
----Creates a scrollable field
----@constructor ScrollField
+---Creates a scrollable list field
+---@constructor ListField
 ---@param x number X coord
 ---@param y number Y Coord
 ---@param w number Width
 ---@param h number Height
----@return ScrollField scrollField
+---@return ListField listField
 function pos.gui.ListField(x, y, w, h)
     local o = {}
     setmetatable(o, { __index = ListField })

@@ -269,6 +269,7 @@ local classes = {
     'TextInput',
     'MenuOption',
     'ScrollField',
+    'ListField',
     'FileSelector'
 }
 for _,class in pairs(classes) do

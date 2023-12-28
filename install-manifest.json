@@ -62,6 +62,7 @@
         "os/gui/TextInput.lua",
         "os/gui/MenuOption.lua",
         "os/gui/ScrollField.lua",
+        "os/gui/ListField.lua",
         "os/gui/FileSelector.lua",
 
         "os/bin/checkSu.lua",
