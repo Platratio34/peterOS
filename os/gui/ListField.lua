@@ -36,8 +36,9 @@ function ListField:draw(window)
     }
     paintutils.drawFilledBox(window.x + self.x, window.y + self.y, self.w + window.x + self.x - 1, self.h + window.y + self.y - 1, self.bg)
     local y = 1
-    for i, el in pairs(self._elements) do
-        if el.visible then
+    for i = 0, self.__elementIndex do
+        local el = self._elements[i]
+        if el and el.visible then
             el.y = y
             if not ((el.y + el.h - 1 <= self.scroll) or (el.y > self.h + self.scroll --[[ and el.y + el.h - 1 > self.h + self.scroll]])) then
                 el:draw(intWindow)
