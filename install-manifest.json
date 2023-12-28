@@ -38,6 +38,7 @@
         
         "os/lib/classes/Logger.lua",
         "os/lib/classes/Config.lua",
+        "os/lib/classes/Parser.lua",
 
         "os/net/init.lua",
         "os/net/nat.lua",
