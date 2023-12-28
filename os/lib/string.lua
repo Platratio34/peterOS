@@ -7,7 +7,7 @@ do                     -- [0-9a-zA-Z]
     for c = 97, 122 do table.insert(charset, string.char(c)) end
 end
 
----Creates a random stiring of given length
+---Creates a random string of given length
 ---@param length number String length
 ---@param chars string[]|nil Optional. Charset for random characters, if not provided uses default: <code>0-9,a-z,A-Z</code>
 ---@return string str Random string of length
@@ -33,7 +33,7 @@ function string.cont(_str1, _str2)
     return not (_str1:find(_str2) == nil)
 end
 
----Splits <code class=var>_str1</code> on every occurance of <code class=var>_sep</code>
+---Splits <code class=var>_str1</code> on every occurrence of <code class=var>_sep</code>
 ---@param _str1 string String to split
 ---@param _sep string String to split on
 ---@return string[] sections Sections of <code class=var>_str1</code> split around <code class=var>_sep</code>
