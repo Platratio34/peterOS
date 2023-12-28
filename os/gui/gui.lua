@@ -217,6 +217,7 @@ gui.running = false
 function gui.run(func)
     _gui.lError = {}
     gui.running = true
+    gui.redrawWindows()
     while gui.running do
         local event = { os.pullEventRaw() }
         if event[1] == 'terminate' then
