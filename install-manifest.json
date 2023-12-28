@@ -6,7 +6,7 @@
         "version.txt",
 
         "os/init.lua",
-        "os/pgms.json",
+        "os/osPgms.json",
         
         "os/lib/hash/sha256.lua",
 
