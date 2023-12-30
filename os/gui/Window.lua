@@ -114,7 +114,9 @@ function Window:process(event)
         t[i] = el
     end
     for _, el in pairs(t) do
-        el:process(event, self)
+        if el.visible then
+            el:process(event, self)
+        end
     end
 end
 
