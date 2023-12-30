@@ -71,6 +71,9 @@ local dnsCache = {}
 -- IP lease expire time
 local leaseTime = 9e99
 
+--- Default message wait time out in seconds
+net.DEFAULT_TIMEOUT = 5
+
 ---Format a numeric IPV4 in the the standard format
 ---@param ip NetAddress IP address either as number, or hardware address
 ---@return string ip IP address formatted in IPV4 x:x:x:x
@@ -222,7 +225,7 @@ local function sendMsg(port, dest, head, body, id)
                     end
                 end
                 return true
-            end, 2) == "timeout" then
+            end, net.DEFAULT_TIMEOUT) == "timeout" then
             log:error("Unable to renew IP")
             error("Unable to renew IP", 0)
             return -1
@@ -241,7 +244,7 @@ local function sendMsg(port, dest, head, body, id)
                 else
                     sendMsg(10000, addrTbl.dns, { type = "net.dns.get" }, { domain = dest })
                     -- print("DNS resolve msg sent")
-                    local msg = net.waitForMsgAdv(10000, 2, function(msg)
+                    local msg = net.waitForMsgAdv(10000, net.DEFAULT_TIMEOUT, function(msg)
                         return msg.origin == addrTbl.dns and msg.header.type == "net.dns.get.return"
                     end)
                     if msg == "timeout" or msg.header.code == "not_found" then
@@ -321,7 +324,7 @@ net.realizeHostname = function(hostname)
             else
                 sendMsg(10000, addrTbl.dns, { type = "net.dns.get" }, { domain = hostname })
                 -- print("DNS resolve msg sent")
-                local msg = net.waitForMsgAdv(10000, 2, function(msg)
+                local msg = net.waitForMsgAdv(10000, net.DEFAULT_TIMEOUT, function(msg)
                     return msg.origin == addrTbl.dns and msg.header.type == "net.dns.get.return"
                 end)
                 if msg == "timeout" or msg.header.code == "not_found" then
@@ -341,13 +344,13 @@ end
 ---Check function takes the port and message.
 ---Returns the message, or "timeout"
 ---@param check function Check function, takes port and message
----@param time number Timeout time in seconds
+---@param time nil|number Timeout time in seconds, Default is net.DEFAULT_TIMEOUT
 ---@return table|string rsp Message or error string
 local function waitForMsg(check, time)
     expect(1, check, "function")
     expect(2, time, "number")
 
-    time = time or 2
+    time = time or net.DEFAULT_TIMEOUT
     local cont = true
     for i, message in pairs(messages) do
         log:debug('Checking msg')
@@ -899,7 +902,6 @@ net.sendSync = function(port, dest, msgType, body, timeout)
     expect(2, dest, "number", "string")
     expect(3, msgType, "string")
     expect(4, timeout, "nil", "number")
-    timeout = timeout or 2
 
     if not net.setup() then
         return "setup_fail"
@@ -962,7 +964,6 @@ net.sendAdvSync = function(port, dest, head, body, timeout)
     expect(2, dest, "number", "string")
     expect(3, head, "table")
     expect(4, timeout, "nil", "number")
-    timeout = timeout or 2
 
     if not net.setup() then
         return "setup_fail"
