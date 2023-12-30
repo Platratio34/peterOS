@@ -81,7 +81,9 @@ function ListField:process(event, window)
         t[i] = el
     end
     for _, el in pairs(t) do
-        el:process(event, intWindow)
+        if el.visible then
+            el:process(event, intWindow)
+        end
     end
 end
 
