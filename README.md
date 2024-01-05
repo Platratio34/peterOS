@@ -2,6 +2,9 @@
 
 A Computer-Craft operating system
 
+
+**[Getting Started](https://github.com/Platratio34/peterOS/wiki/Getting-Started)**
+
 ## Features
 
 - Networking
