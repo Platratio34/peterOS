@@ -609,7 +609,7 @@ local handlerId = pos.addEventHandler(eventHandler, 'modem_message')
 
 ---Get a modem on side, and add network functions
 ---@param side string Side of computer: <code>front</code>, <code>back</code>, <code>left</code>, <code>right</code>, <code>top</code>, <code>bottom</code>
----@return table|nil modem Model handle
+---@return table|nil modem Modem handle
 net.getModem = function(side)
     expect(1, side, "string")
 
@@ -1147,7 +1147,7 @@ net.stringMessage = function(msg)
 end
 
 ---Open the modem on port (10,000 through 20,000)
----@param port  number Network port to open (see net.standardPorts)
+---@param port number Network port to open (see net.standardPorts)
 net.open = function(port)
     expect(1, port, "number")
 
