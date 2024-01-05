@@ -1,1 +1,1 @@
-PeterOS V1.7
+PeterOS V1.8-Dev
