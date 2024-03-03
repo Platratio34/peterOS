@@ -54,6 +54,17 @@ if not fs.exists(appdataPath) then
     fs.makeDir(appdataPath)
 end
 
+---Instance a given class
+---@param class table Class table
+---@param ... any constructor arguments
+---@return table instance
+local function instanceClass(class, ...)
+    local o = {}
+    setmetatable(o, {__metatable = class})
+    if(o.__init__) then
+        o:__init(...)
+    end
+end
 -- local function log(msg)
 --     local logF = fsOpen("log.log", "a")
 --     logF.write(msg.."\n")
@@ -438,7 +449,8 @@ _G.pos = {
     version = getVersion,
     realizePath = realizePath,
     relizePath = realizePath,
-    log = log
+    log = log,
+    instanceClass = instanceClass
 }
 
 fs.open = open
@@ -451,83 +463,7 @@ fs.makeDir = makeDir
 fs.list = list
 fs.isDir = isDir
 
----@class EventHandler
----@field handler function Handler function, takes event table
----@field filter nil|string[] Event filter, leave `nil` to handle all events
-local EventHandler = {}
-function EventHandler:try(eType, event)
-    if self.filter == nil then
-        self.handler(event)
-    else
-        for _,filter in pairs(self.filter) do
-            if filter == eType then
-                self.handler(event)
-                return
-            end
-        end
-    end
-end
-
-local eventHandlers = {} ---@type table<number, EventHandler>
-local eventHandlerId = 0
-
----Add an event handler
----@param handler function Event handler function, takes event table
----@param filter nil|string|string[] Event type filter. Leave `nil` for all events
----@return integer handlerId Event handler Id, used to remove handler
-function pos.addEventHandler(handler, filter)
-    expect(1, handler, "function")
-    expect(2, filter, "nil", 'string', 'table')
-    if type(filter) == 'string' then
-        filter = { filter }
-    end
-    local ehId = eventHandlerId
-    eventHandlerId = eventHandlerId + 1
-    local eventHandler = {
-        handler = handler,
-        filter = filter
-    }
-    setmetatable(eventHandler, { __index = EventHandler })
-    eventHandlers[ehId] = eventHandler
-    return ehId
-end
----Remove an event handler by ID
----@param handlerId number Event handler Id returned by `pos.addEventHandler()`
----@return number handlerId Id of event handler that was removed
-function pos.removeEventHandler(handlerId)
-    eventHandlers[handlerId] = nil
-    return handlerId
-end
-
-local osPullEventRaw = os.pullEventRaw
-local function pullEventRaw(sFilter)
-    while true do
-        local event = { osPullEventRaw() }
-        local eType = event[1]
-
-        for _, eHandler in pairs(eventHandlers) do
-            local s, r = pcall(function()
-                eHandler:try(eType, event)
-            end)
-            if not s then
-                log:error(('Event handler error: %s'):format(r))
-            end
-        end
-        
-        if not sFilter or sFilter == eType then
-            return unpack(event)
-        end
-    end
-end
-os.pullEventRaw = pullEventRaw
-
-os.pullEvent = function(sFilter)
-    local event = { os.pullEventRaw(sFilter) }
-    if event[1] == "terminate" then
-        error("Terminating", 0)
-    end
-    return unpack(event)
-end
+local osEvents = loadfile("/os/events.lua")(log)
 
 -- local requireO = require
 -- local logF = fsOpen("thing.log", "w")
