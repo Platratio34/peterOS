@@ -1,5 +1,6 @@
 local expect = require "cc.expect"
 local args = {...}
+local log = args[1]
 
 local eventHandlers = {} ---@type table<number, EventHandler>
 local eventHandlerId = 0
@@ -10,17 +11,17 @@ local function pullEventRaw(sFilter)
         local event = { osPullEventRaw() }
         local eType = event[1]
 
-        for _, eHandler in pairs(eventHandlers) do
+        for eId, eHandler in pairs(eventHandlers) do
             local s, r = pcall(function()
                 eHandler:try(eType, event)
             end)
             if not s then
-                log:error(('Event handler error: %s'):format(r))
+                log:error(('Event handler %d error: %s'):format(eId, r))
             end
         end
         
         if not sFilter or sFilter == eType then
-            return unpack(event)
+            return table.unpack(event)
         end
     end
 end
@@ -31,7 +32,7 @@ os.pullEvent = function(sFilter)
     if event[1] == "terminate" then
         error("Terminating", 0)
     end
-    return unpack(event)
+    return table.unpack(event)
 end
 
 ---@class EventHandler
@@ -83,6 +84,18 @@ end
 function pos.removeEventHandler(handlerId)
     eventHandlers[handlerId] = nil
     return handlerId
+end
+
+---Waits for an event of given type and check function returns true
+---@param eventType nil|string event type
+---@param check function check function, takes event table, returns true to end wait
+function pos.waitForEventCheck(eventType, check)
+    while true do
+        local event = {os.pullEvent(eventType)}
+        if(check(event)) then
+            return
+        end
+    end
 end
 
 return {
