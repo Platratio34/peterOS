@@ -76,7 +76,7 @@ local messages = {}
 local connectionIds = {}
 
 local function check(side, port, msg)
-    ---@cast msg NetAddress
+    ---@cast msg NetMessage
     if port < 10000 or port >= 20000 then return true end
     if type(msg.dest) ~= "number" and type(msg.dest) ~= "string" then
         log:error("Destination type error: type="..type(msg.dest)..": '" .. tostring(msg.dest) .. "'")
@@ -120,7 +120,7 @@ local function waitForMsg()
     while cont do
         local event = { os.pullEvent() }
         if event[1] == "modem_message" then
-            local _, side, port, _, message, _ = unpack(event)
+            local _, side, port, _, message, _ = table.unpack(event)
             cont = check(side, port, message)
             if not cont then
                 ---@cast message NetMessage
@@ -269,7 +269,7 @@ local function pullEventRaw(sFilter)
     while true do
         local event = { osPullEventRaw() }
         if event[1] == 'modem_message' then
-            local _, side, port, _, message, _ = unpack(event)
+            local _, side, port, _, message, _ = table.unpack(event)
             if not check(side, port, message) then 
                 ---@cast message NetMessage
                 local uMsgId = net.ipFormat(message.origin)
@@ -285,7 +285,7 @@ local function pullEventRaw(sFilter)
             end
         end
         if (not sFilter) or event[1] == sFilter then
-            return unpack(event)
+            return table.unpack(event)
         end
     end
 end

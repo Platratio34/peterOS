@@ -51,7 +51,7 @@ end
 ---@param window Window The window the button is proccessed in
 function Button:process(event, window)
     if event[1] == 'mouse_click' then
-        local _, btn, x, y = unpack(event)
+        local _, btn, x, y = table.unpack(event)
         x = x - window.x
         y = y - window.y
         if x >= self.x and x < self.x + self.w and y >= self.y and y < self.y + self.h then

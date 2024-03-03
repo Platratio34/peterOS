@@ -17,6 +17,7 @@ _G.pos.LoggerLevel = LoggerLevel
 ---@field private file Handle|nil File write handle
 ---@field print boolean If the logger should also print to the shell
 ---@field logTime boolean If time should be included in the log
+---@field private _errorFile Handle|nil Error file write handle
 local Logger = {
     path = '/home/.pgmLog/',
     level = LoggerLevel.DEBUG,

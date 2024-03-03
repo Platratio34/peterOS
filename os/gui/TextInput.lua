@@ -97,7 +97,7 @@ end
 ---@param window Window The window the input is proccessed in
 function TextInput:process(event, window)
     if event[1] == 'mouse_click' then
-        local _, _, x, y = unpack(event)
+        local _, _, x, y = table.unpack(event)
         x = x - window.x
         y = y - window.y
         if x >= self.x and x < self.x + self.w and y == self.y then
@@ -117,13 +117,13 @@ function TextInput:process(event, window)
         return
     end
     if event[1] == 'char' then
-        local _, char = unpack(event)
+        local _, char = table.unpack(event)
         -- self.text = self.
         if string.len(self.text) < (self.w * self.h) then
             self:setText(self.text .. char)
         end
     elseif event[1] == 'key' then
-        local _, key, hold = unpack(event)
+        local _, key, hold = table.unpack(event)
         -- pos.gui._log:info(key)
         if key == keys.backspace then
             -- pos.gui._log:info('bakcspace '..self.text)

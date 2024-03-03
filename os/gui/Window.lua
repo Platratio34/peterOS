@@ -92,7 +92,7 @@ end
 ---@param event table Event table
 function Window:process(event)
     if event[1] == 'mouse_click' then
-        local _, button, x, y = unpack(event)
+        local _, button, x, y = table.unpack(event)
         x = x - self.x
         y = y - self.y
         if y == 1 and x == self.w then

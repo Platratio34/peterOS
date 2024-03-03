@@ -10,7 +10,7 @@ local LocalUser = {
 local LocalUserMT = {
     __index = LocalUser,
 }
-local fsOpen, osLog, require = unpack({ ... })
+local fsOpen, osLog, require = table.unpack({ ... })
 local sha256 = require("hash.sha256")
 
 ---Create a new LocalUser with name, password, and permissions

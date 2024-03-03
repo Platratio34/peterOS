@@ -369,7 +369,7 @@ local function waitForMsg(check, time)
     while cont do
         local event = { os.pullEvent() }
         if event[1] == "net_message" then
-            local _, message = unpack(event)
+            local _, message = table.unpack(event)
             ---@cast message NetMessage
             local port = message.port
             -- print(net.stringMessage(message))
@@ -450,7 +450,7 @@ local waitingForAccept = false
 -- os.pullEventRaw = function(sFilter)
 local function eventHandler(event)
     -- print("Got Modem Msg")
-    local _, _, port, _, msg, _ = unpack(event)
+    local _, _, port, _, msg, _ = table.unpack(event)
     local ps, pe = pcall(function()
         if not net.validMsg(port, msg) then
             return

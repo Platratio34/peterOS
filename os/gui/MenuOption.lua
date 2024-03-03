@@ -50,7 +50,7 @@ end
 ---@param window Window The window the option menu is proccessed in
 function MenuOption:process(event, window)
     if event[1] == 'mouse_click' then
-        local _, _, x, y = unpack(event)
+        local _, _, x, y = table.unpack(event)
         x = x - window.x
         y = y - window.y
         if y == 1 and x >= self.x and x < self.x + string.len(self.name) then

@@ -52,7 +52,7 @@ end
 ---@param window Window The window the list field is processed in
 function ListField:process(event, window)
     if event[1] == 'mouse_scroll' then
-        local _, dir, x, y = unpack(event)
+        local _, dir, x, y = table.unpack(event)
         x = x - window.x
         y = y - window.y
         if pos.gui.inBox(window, self.x, self.y, self.w, self.h, x, y) then

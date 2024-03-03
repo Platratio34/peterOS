@@ -47,7 +47,7 @@ end
 ---@param window Window The window the scroll field is proccessed in
 function ScrollField:process(event, window)
     if event[1] == 'mouse_scroll' then
-        local _, dir, x, y = unpack(event)
+        local _, dir, x, y = table.unpack(event)
         x = x - window.x
         y = y - window.y
         -- pos.gui._log:debug('thinging')

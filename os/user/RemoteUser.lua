@@ -6,7 +6,7 @@ local RemoteUser = {
 local RemoteUserMT = {
     __index = RemoteUser
 }
-local fsOpen, osLog, LocalUser = unpack({ ... })
+local fsOpen, osLog, LocalUser = table.unpack({ ... })
 local sha256 = require("hash.sha256")
 
 setmetatable(RemoteUserMT, {__index = LocalUser})
@@ -40,7 +40,7 @@ end
 ---Saves the remote user to remote
 ---@return boolean saved
 function RemoteUser:save()
-    local msg = net.sendAdvSync(net.standardPorts.remoteUser, self.server, {
+    local msg = net.sendAdvSync(net.standardPorts.remoteUser, self._server, {
         type = 'tryLogin',
     }, {
         name = self.name,
