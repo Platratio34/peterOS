@@ -60,10 +60,11 @@ end
 ---@return table instance
 local function instanceClass(class, ...)
     local o = {}
-    setmetatable(o, {__metatable = class})
-    if(o.__init__) then
+    setmetatable(o, {__index = class})
+    if (o.__init__) then
         o:__init(...)
     end
+    return o
 end
 -- local function log(msg)
 --     local logF = fsOpen("log.log", "a")
