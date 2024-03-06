@@ -87,7 +87,7 @@ function pos.removeEventHandler(handlerId)
 end
 
 ---Waits for an event of given type and check function returns true
----@param eventType nil|string event type
+---@param eventType nil|string event type or nil for all events
 ---@param check function check function, takes event table, returns true to end wait
 function pos.waitForEventCheck(eventType, check)
     while true do

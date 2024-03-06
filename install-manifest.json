@@ -81,6 +81,7 @@
     ],
     "pgms":[
         "pgm-get",
-        "rBrowser"
+        "rBrowser",
+        "logViewer"
     ]
 }

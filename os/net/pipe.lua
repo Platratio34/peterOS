@@ -1,0 +1,193 @@
+---@class NetPipe
+---@field connected boolean
+---@field _open boolean
+---@field remote NetAddress
+---@field private __remoteAddr number|string
+---@field port number
+---@field private __nextPacketId number
+---@field private __lastPacket nil|table
+---@field private __packetQueueOut Queue
+---@field private __dataQueueIn Queue
+---@field private __waiting boolean
+---@field private __handlerID number
+---@field private __lastRemoteId number
+---@field private __timer number
+---@field private __tries number
+---@field TYPE string **STATIC** message type for pipe
+---@field MAX_TRIES number **STATIC** maximum retries to send a packet
+---@field ON_PACKET_EVENT string **STATIC** os event type for on packet
+local NetPipe = {
+    __nextPacketId = 0,
+    TYPE = "pipe",
+    MAX_TRIES = 3,
+    ON_PACKET_EVENT = "pipe_on_packet"
+}
+local PipeMT = {
+    __index = NetPipe,
+}
+
+---Instantiate a new network pipe
+---@param remote NetAddress address of the other end of the pipe
+---@param port number port for the pipe
+---@return NetPipe pipe
+local function instantiate(remote, port)
+    local o = {}
+    setmetatable(o, PipeMT)
+    o:__init__(remote, port)
+    return o
+end
+
+---**Internal** Initialize the pipe
+---@param remote NetAddress address of the other end of the pipe
+---@param port number port for the pipe
+function NetPipe:__init__(remote, port)
+    self.remote = remote
+    self.port = port or net.standardPorts.network
+    self.connected = false
+    self.__packetQueueOut = pos.Queue()
+    self.__dataQueueIn = pos.Queue()
+    self.__tries = 0
+    self.__lastRemoteId = -1
+end
+
+---Send a data packet through the pipe
+---@param data any the data to send
+function NetPipe:send(data)
+    if not self._open then
+        error("PipeError: Pipe must be open to send data", 2)
+    end
+    local id = self.__nextPacketId
+    self.__nextPacketId = id + 1
+    local packet = {
+        id = id,
+        data = data
+    }
+    if self.__packetQueueOut:size() == 0 and not self.__waiting then
+        self:_sendDataPacket(packet)
+    else
+        self.__packetQueueOut:enqueue(packet)
+    end
+end
+
+---**Internal** Send a data packet to the remote, resetting last packet and timer
+---@param packet NetPipe.Packet data packet to send
+function NetPipe:_sendDataPacket(packet)
+    self.__lastPacket = packet
+    self:_sendPacket(packet)
+    self.__timer = os.startTimer(5)
+    self.__tries = self.__tries + 1
+end
+
+---**Internal** Send a generic packet to the remote
+---@param packet NetPipe.Packet packet to send
+function NetPipe:_sendPacket(packet)
+    net.send(self.port, self.__remoteAddr, NetPipe.TYPE, packet)
+end
+
+---**Internal** Processes an incoming packet
+---@param packet NetPipe.Packet
+function NetPipe:_onPacket(packet)
+    self.connected = true
+    if packet.id == -1 then
+        if packet.data == "CLOSE" then
+            self:_sendPacket({
+                id = -1,
+                data = "CLOSE"
+            })
+            net.unregisterMsgHandler(self.__handlerID)
+            self.connected = false
+        elseif packet.data == "GOT" then
+            self.__waiting = false
+            if self.__packetQueueOut:size() > 0 then
+                self:_sendDataPacket(self.__packetQueueOut:dequeue())
+            end
+            self.__tries = 0
+        end
+        return
+    end
+    if packet.id > self.self.__lastRemoteId + 1 then return end
+    self:_sendPacket({
+        id = -1,
+        data = "GOT"
+    })
+    self.__lastRemoteId = packet.id
+    self.__dataQueueIn:enqueue(packet.data)
+    os.queueEvent(NetPipe.ON_PACKET_EVENT, self)
+end
+
+---Open the pipe. Must be called before trying to send data
+function NetPipe:open()
+    if self._open then
+        error("PipeError: Pipe already open", 2)
+    end
+    self.__remoteAddr = net.realizeHostname(self.remote)
+    self.__handlerID = pos.addEventHandler(function(event)
+        if event[1] == "net_message" then
+            local msg = event[2]
+            ---@cast msg NetMessage
+            if msg.port ~= self.port then return end
+            if msg.type ~= NetPipe.TYPE then return end
+            if msg.origin ~= self.__remoteAddr then return end
+            ---@diagnostic disable-next-line: param-type-mismatch
+            self:_onPacket(msg.body)
+        elseif event[1] == "timer" and event[2] == self.__timer then
+            if self.__tries > NetPipe.MAX_TRIES then
+                self:close()
+                error("Too many retries for pipe, closing",0)
+                return
+            end
+            self:_sendDataPacket(self.__lastPacket)
+        end
+    end)
+    net.open(self.port)
+    self._open = true
+end
+
+---Closes the pipe and sends close message. Data can not be sent after closing 
+function NetPipe:close()
+    if not self._open then
+        error("PipeError: Pipe was not open", 2)
+    end
+    self._open = false
+    self:_sendPacket({
+        id = -1,
+        data = "CLOSE"
+    })
+end
+
+---Check if the pipe has any data waiting to be pulled from it
+---@return boolean
+function NetPipe:hasData()
+    return self.__dataQueueIn:size() > 0
+end
+
+---Get the next packet's data if present, else returns nil
+---@param time nil|number wait time for next packet, leave nil to not wait
+---@return any|nil data next packet from pipe or nil if no more packets left
+function NetPipe:poll(time)
+    if self:hasData() then
+        return self.__dataQueueIn:dequeue()
+    end
+    if time == nil then
+        return nil
+    end
+    local timeout = os.startTimer(time)
+    local e = pos.waitForEventCheck(nil, function(event)
+        if event[1] == "timer" and event[2] == timeout then
+            return true
+        end
+        if event[1] == NetPipe.ON_PACKET_EVENT and event[2] == self then
+            return true
+        end
+    end)
+    if not self:hasData() then
+        return nil
+    end
+    return self.__dataQueueIn:dequeue()
+end
+
+---@class NetPipe.Packet
+---@field id number packet id, -1 for control messages
+---@field data any packet data, action for control message
+
+return instantiate
