@@ -74,6 +74,8 @@ end
 
 local messages = {}
 local connectionIds = {}
+local pipes = {}
+local pipesByOrigin = {}
 
 local function check(side, port, msg)
     ---@cast msg NetMessage
@@ -178,11 +180,23 @@ local function handlerFunc(side, port, msg)
                     conId = conId - 1
                 end
             end
+
             local record = {
                 origin = msg.origin,
                 msgid = msg.msgid,
                 conId = msg.header.conId
             }
+
+            if msg.header.type == net.NetPipeType then
+                local pipeId = pipesByOrigin[msg.origin][msg.dest]
+                if not pipeId then
+                    pipeId = os.epoch('utc')
+                    pipesByOrigin[msg.origin][msg.dest] = pipeId
+                end
+                pipes[pipeId] = record
+                msg.header.originPipeId = pipeId
+            end
+
             ---@cast msg NetMessage
             msg.header.conId = conId
             if msg.header.publicKey then
@@ -208,7 +222,10 @@ local function handlerFunc(side, port, msg)
         local conId = msg.header.destConId
         log:debug(('MSG: %s for %s: #%s:%s'):format(net.ipFormat(msg.origin), net.ipFormat(msg.dest), tostring(msg.msgid),
             tostring(conId)))
-        if not (messages[conId] and messages[conId][msg.msgid]) then            -- if the message is NOT a response to an outgoing message
+        if msg.header.type == net.NetPipeType and pipes[msg.header.destPipeId] then
+            local record = pipes[msg.header.destPipeId]
+            cfg.inside.modem:sendMsgAdv2(port, msg.origin, record.origin, msg.header, msg.body, msg.msgid)
+        elseif not (messages[conId] and messages[conId][msg.msgid]) then            -- if the message is NOT a response to an outgoing message
             if msg.header.domain == nil or msg.header.domain == cfg.domain then -- if the message is for the NAT itself
                 log:info("External message for NAT: " .. net.stringMessage(msg))
                 return

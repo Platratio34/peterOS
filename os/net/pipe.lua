@@ -13,6 +13,7 @@
 ---@field private __lastRemoteId number
 ---@field private __timer number
 ---@field private __tries number
+---@field private __remotePipeId number|nil
 ---@field TYPE string **STATIC** message type for pipe
 ---@field MAX_TRIES number **STATIC** maximum retries to send a packet
 ---@field ON_PACKET_EVENT string **STATIC** os event type for on packet
@@ -36,6 +37,8 @@ local function instantiate(remote, port)
     o:__init__(remote, port)
     return o
 end
+net.NetPipe = instantiate
+net.NetPipeType = NetPipe.TYPE ---Message type for net pipes
 
 ---**Internal** Initialize the pipe
 ---@param remote NetAddress address of the other end of the pipe
@@ -81,11 +84,14 @@ end
 ---**Internal** Send a generic packet to the remote
 ---@param packet NetPipe.Packet packet to send
 function NetPipe:_sendPacket(packet)
-    net.send(self.port, self.__remoteAddr, NetPipe.TYPE, packet)
+    net.sendAdv(self.port, self.__remoteAddr, {
+        type = NetPipe.TYPE,
+        destPipeId = self.__remotePipeId
+    }, packet)
 end
 
 ---**Internal** Processes an incoming packet
----@param packet NetPipe.Packet
+---@param packet NetPipe.Packet packet to process
 function NetPipe:_onPacket(packet)
     self.connected = true
     if packet.id == -1 then
@@ -105,7 +111,8 @@ function NetPipe:_onPacket(packet)
         end
         return
     end
-    if packet.id > self.self.__lastRemoteId + 1 then return end
+    if packet.id ~= self.self.__lastRemoteId + 1 then return end -- out of order packet
+
     self:_sendPacket({
         id = -1,
         data = "GOT"
@@ -115,7 +122,7 @@ function NetPipe:_onPacket(packet)
     os.queueEvent(NetPipe.ON_PACKET_EVENT, self)
 end
 
----Open the pipe. Must be called before trying to send data
+---Open the pipe. Must be called before trying to send data.
 function NetPipe:open()
     if self._open then
         error("PipeError: Pipe already open", 2)
@@ -124,16 +131,18 @@ function NetPipe:open()
     self.__handlerID = pos.addEventHandler(function(event)
         if event[1] == "net_message" then
             local msg = event[2]
-            ---@cast msg NetMessage
+            ---@cast msg NetPipe.Message
             if msg.port ~= self.port then return end
             if msg.type ~= NetPipe.TYPE then return end
             if msg.origin ~= self.__remoteAddr then return end
-            ---@diagnostic disable-next-line: param-type-mismatch
             self:_onPacket(msg.body)
+            if msg.header.originPipeId then
+                self.__remotePipeId = msg.header.originPipeId
+            end
         elseif event[1] == "timer" and event[2] == self.__timer then
             if self.__tries > NetPipe.MAX_TRIES then
                 self:close()
-                error("Too many retries for pipe, closing",0)
+                error("PipeError: Too many retries for pipe, closing", 0)
                 return
             end
             self:_sendDataPacket(self.__lastPacket)
@@ -143,7 +152,7 @@ function NetPipe:open()
     self._open = true
 end
 
----Closes the pipe and sends close message. Data can not be sent after closing 
+---Closes the pipe and sends close message. Data can not be sent after closing.
 function NetPipe:close()
     if not self._open then
         error("PipeError: Pipe was not open", 2)
@@ -190,4 +199,10 @@ end
 ---@field id number packet id, -1 for control messages
 ---@field data any packet data, action for control message
 
-return instantiate
+---@class NetPipe.Message : NetMessage
+---@field header NetPipe.Header Header table
+---@field body NetPipe.Packet Pipe packet
+
+---@class NetPipe.Header : NetMessage.Header
+---@field originPipeId nil|number Origin NAT pipe ID
+---@field destPipeId nil|number Destination NAT pipe ID
