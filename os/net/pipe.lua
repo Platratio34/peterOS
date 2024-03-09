@@ -1,20 +1,20 @@
 ---@class NetPipe
----@field name string
----@field connected boolean
----@field _open boolean
----@field remote NetAddress
----@field private __remoteAddr number|string
----@field port number
----@field private __nextPacketId number
----@field private __lastPacket nil|table
----@field private __packetQueueOut Queue
----@field private __dataQueueIn Queue
----@field private __waiting boolean
----@field private __handlerID number
----@field private __lastRemoteId number
----@field private __timer number
----@field private __tries number
----@field private __remotePipeId number|nil
+---@field name string Pipe name
+---@field connected boolean If the pipe is connected to the remote
+---@field _open boolean If the pipe is open (ready to accept incoming and outgoing data)
+---@field remote NetAddress Pipe end address
+---@field private __remoteAddr number|string IP address of pipe end
+---@field port number Networking port for pipe
+---@field private __nextPacketId number ID of next outgoing data packet
+---@field private __lastPacket nil|table Last send data packet
+---@field private __packetQueueOut Queue Queue of pending outgoing data packets
+---@field private __dataQueueIn Queue Incoming packet buffer
+---@field private __waiting boolean If the pipe is waiting on a confirmation for the last data packet
+---@field private __handlerID number Event handler ID
+---@field private __lastRemoteId number Last data packet ID from remote
+---@field private __timer number Timer ID for confirmation timeout
+---@field private __tries number Number of attempts to send last data packet
+---@field private __remotePipeId number|nil **NET LEVEL** NAT ID for pipe at remote
 ---@field TYPE string **STATIC** message type for pipe
 ---@field MAX_TRIES number **STATIC** maximum retries to send a packet
 ---@field ON_PACKET_EVENT string **STATIC** os event type for on packet
