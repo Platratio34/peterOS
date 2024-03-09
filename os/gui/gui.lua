@@ -192,7 +192,7 @@ function gui.focusWindow(window)
 end
 ---Unfocus window
 ---@param window Window|number  window or window index
-function gui.unfocuseWindow(window)
+function gui.unfocusWindow(window)
     if type(window) == 'table' then
         window = window._windowIndex
         ---@cast window number
@@ -213,7 +213,7 @@ end
 ---@type boolean If window system is running. Set to false to stop running
 gui.running = false
 ---Run window draw and process loop. Runs until pos.gui.running is set to false
----@param func nil|function (Optional) Event function. function(eventTable)
+---@param func nil|fun(event: table) (Optional) Event function. Takes event table
 function gui.run(func)
     _gui.lError = {}
     gui.running = true

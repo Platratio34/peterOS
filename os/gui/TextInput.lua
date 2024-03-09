@@ -4,13 +4,13 @@ local expect = ...
 ---@class TextInput: UiElement Basic text input box
 ---@field bg color Background color
 ---@field fg color Foreground color (text color)
----@field onEnter function On enter function, only called if <code type=var>submitable</code> is true
+---@field onEnter fun(text: string) On enter function, only called if <code type=var>submitable</code> is true
 ---@field text string Current text in input
 ---@field h number Maximum height of input box
 ---@field focused boolean If the input is currently focused
 ---@field _lines string[] Parsed lines of text input (generated)
 ---@field submitable boolean if the input should be treated as submittable, and trigger the <code class=var>onEnter</code> callback
----@field hideText boolean If text in the unput should be hidden an replaced with <code>*</code>s
+---@field hideText boolean If text in the input should be hidden an replaced with <code>*</code>s
 ---@field next UiElement|nil The next input element to be focused on submit or tab
 ---@field name string|nil Input field name
 ---@field type string Override. UiElement type field: <code class=string>'TextInput'</code>
@@ -28,13 +28,13 @@ local TextInput = {
 }
 setmetatable(TextInput, {__index = pos.gui.mt.UiElement} )
 
----Initilizses the input
+---Initializes the input
 ---@param x number X position
 ---@param y number Y position
 ---@param w number Width
 ---@param background color|nil Background color
 ---@param foreground color|nil Text color
----@param onEnter nil|function On Enter function. function(text)
+---@param onEnter nil|fun(text: string) On Enter function
 function TextInput:__init__(x, y, w, background, foreground, onEnter)
     self.x = x
     self.y = y
@@ -92,9 +92,9 @@ function TextInput:draw(window)
         pos.gui.setCursor(lx, ly, true, self.fg)
     end
 end
----Override. Proccesses <code>mouse_click</code>, <code>char</code>, and <code>key</code> events for the input
+---Override. Processes <code>mouse_click</code>, <code>char</code>, and <code>key</code> events for the input
 ---@param event table Event table
----@param window Window The window the input is proccessed in
+---@param window Window The window the input is processed in
 function TextInput:process(event, window)
     if event[1] == 'mouse_click' then
         local _, _, x, y = table.unpack(event)
@@ -165,7 +165,7 @@ end
 ---@param w number Width
 ---@param background color|nil Background color
 ---@param foreground color|nil Text color
----@param onEnter nil|function On Enter function. function(text)
+---@param onEnter nil|fun(text: string) On Enter function.
 ---@return TextInput textInput
 function pos.gui.TextInput(x, y, w, background, foreground, onEnter)
     local o = {}

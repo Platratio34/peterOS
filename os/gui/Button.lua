@@ -3,7 +3,7 @@
 ---@field bg color Background color
 ---@field fg color Foreground color (text color)
 ---@field text string Button text
----@field onClick function On button click callback, passes mouse button used to click
+---@field onClick fun(btn: number) On button click callback, passes mouse button used to click
 ---@field type string Override. UiElement type field: <code class=string>'Button'</code>
 local Button = {
     bg = colors.gray,
@@ -14,7 +14,7 @@ local Button = {
 }
 setmetatable(Button, {__index = pos.gui.mt.UiElement} )
 
----Initilizses the button
+---Initializes the button
 ---@param x number X position
 ---@param y number Y position
 ---@param w number Width
@@ -22,7 +22,7 @@ setmetatable(Button, {__index = pos.gui.mt.UiElement} )
 ---@param background color|nil Background color
 ---@param foreground color|nil Foreground color (text color)
 ---@param text string Button text
----@param onClick function On Click callback, passed mouse button
+---@param onClick fun(btn: number) On Click callback, passed mouse button
 function Button:__init__(x, y, w, h, background, foreground, text, onClick)
     self.x = x
     self.y = y
@@ -46,9 +46,9 @@ function Button:draw(window)
     term.setCursorPos(self.x + window.x, self.y + window.y)
     term.write(self.text)
 end
----Override. Proccesses <code>mouse_click</code> events for the button
+---Override. Processes <code>mouse_click</code> events for the button
 ---@param event table Event table
----@param window Window The window the button is proccessed in
+---@param window Window The window the button is processed in
 function Button:process(event, window)
     if event[1] == 'mouse_click' then
         local _, btn, x, y = table.unpack(event)
@@ -69,7 +69,7 @@ end
 ---@param background color|nil Background color
 ---@param foreground color|nil Text color
 ---@param text string Button text
----@param onClick function On Click callback, passed mouse button
+---@param onClick fun(btn: number) On Click callback, passed mouse button
 ---@return Button button
 function pos.gui.Button(x, y, w, h, background, foreground, text, onClick)
     local o = {}

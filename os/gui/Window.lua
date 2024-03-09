@@ -1,6 +1,6 @@
 ---@package pos.gui
 ---@class Window Basic GUI window class
----@field bg color Backgroud color
+---@field bg color Background color
 ---@field private _name string Window name
 ---@field visible boolean Window visibility
 ---@field exitOnHide boolean If the window should exit the program on being hidden
@@ -13,7 +13,7 @@
 ---@field private __elementIndex number Last element index
 ---@field private _menuOptions MenuOption[] Table of menu options for window bar
 ---@field private __menuIndex number Last menu option index
----@field private _nameOffset number Name x offset (calulated)
+---@field private _nameOffset number Name x offset (calculated)
 ---@field _windowIndex number Global window index (set by <code class=func>pos.gui.addWindow()</code>)
 local Window = {
     bg = colors.black,
@@ -56,7 +56,7 @@ function Window:hide()
     if self.exitOnHide then
         pos.gui.running = false
     end
-    pos.gui.unfocuseWindow(self._windowIndex)
+    pos.gui.unfocusWindow(self._windowIndex)
 end
 
 ---Draw window

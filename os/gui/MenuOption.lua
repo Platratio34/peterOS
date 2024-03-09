@@ -2,7 +2,7 @@
 ---@class MenuOption : UiElement Basic text input box
 ---@field name string Menu name
 ---@field options string[] Menu option names
----@field onSelect function On option select callback
+---@field onSelect fun(index: number, option: string) On option select callback
 ---@field visible boolean If the dropdown is visible
 ---@field w number Dropdown width
 ---@field type string Override. UiElement type field: <code class=string>'MenuOption'</code>
@@ -20,7 +20,7 @@ setmetatable(MenuOption, { __index = pos.gui.mt.UiElement })
 ---@param name string Menu name
 ---@param options string[] Option names
 ---@param w number Dropdown width
----@param onSelect function On option select callback
+---@param onSelect fun(index: number, option: string) On option select callback
 function MenuOption:__init__(x, name, options, w, onSelect)
     self.x = x
     self.name = name
@@ -45,9 +45,9 @@ function MenuOption:draw(window)
         end
     end
 end
----Override. Proccesses <code>mouse_click</code> events for the option menu
+---Override. Processes <code>mouse_click</code> events for the option menu
 ---@param event table Event table
----@param window Window The window the option menu is proccessed in
+---@param window Window The window the option menu is processed in
 function MenuOption:process(event, window)
     if event[1] == 'mouse_click' then
         local _, _, x, y = table.unpack(event)
@@ -72,7 +72,7 @@ end
 ---@param name string Menu name
 ---@param options string[] Option names
 ---@param w number Dropdown width
----@param onSelect function On select callback. <code class=func>function(<code class=var>index</code>: <code class=type>number</code>, <code class=var>option</code>: <code class=type>string</code>)</code>
+---@param onSelect fun(index: number, option: string) On select callback
 ---@return MenuOption menuOption
 function pos.gui.MenuOption(x, name, options, w, onSelect)
     local o = {}

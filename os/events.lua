@@ -36,14 +36,17 @@ os.pullEvent = function(sFilter)
 end
 
 ---@class EventHandler
----@field handler function Handler function, takes event table
+---@field handler fun(event: table) Handler function, takes event table
 ---@field filter nil|string[] Event filter, leave `nil` to handle all events
 local EventHandler = {}
+---Try to execute the event handler, if filter matchers
+---@param eType string event type
+---@param event table event table
 function EventHandler:try(eType, event)
     if self.filter == nil then
         self.handler(event)
     else
-        for _,filter in pairs(self.filter) do
+        for _, filter in pairs(self.filter) do
             if filter == eType then
                 self.handler(event)
                 return
@@ -51,7 +54,8 @@ function EventHandler:try(eType, event)
         end
     end
 end
----@param handler function Event handler function, takes event table
+---Initialize the event handler
+---@param handler fun(event: table) Event handler function, takes event table
 ---@param filter nil|string|string[] Event type filter. Leave `nil` for all events
 function EventHandler:__init__(handler, filter)
     expect(1, handler, "function")
@@ -64,7 +68,7 @@ function EventHandler:__init__(handler, filter)
 end
 
 ---Add an event handler
----@param handler function Event handler function, takes event table
+---@param handler fun(event: table) Event handler function, takes event table
 ---@param filter nil|string|string[] Event type filter. Leave `nil` for all events
 ---@return integer handlerId Event handler Id, used to remove handler
 function pos.addEventHandler(handler, filter)
@@ -88,7 +92,7 @@ end
 
 ---Waits for an event of given type and check function returns true
 ---@param eventType nil|string event type or nil for all events
----@param check function check function, takes event table, returns true to end wait
+---@param check fun(event: table): boolean check function, takes event table, returns true to end wait
 function pos.waitForEventCheck(eventType, check)
     while true do
         local event = {os.pullEvent(eventType)}

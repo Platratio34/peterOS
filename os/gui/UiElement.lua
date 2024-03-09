@@ -34,7 +34,7 @@ function UiElement:process(event, window)
     end
 end
 
----Creates a basic UiElement. Inteded for creating custom UI elements
+---Creates a basic UiElement. Intended for creating custom UI elements
 ---@constructor UiElement
 ---@return UiElement element
 function pos.gui.UiElement()

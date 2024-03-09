@@ -216,7 +216,7 @@ end
 ---Set the server message handler.
 ---Function takes in the method (<code class=type>string</code>), header (<code class=type>table</code>), body (<code class=type>any</code>), and the raw message (<code class=type>RttpMessage</code>).
 ---Function should return the code (<code class=type>number</code>), content type (<code class=type>string</code>), and the body (any not nil).
----@param func function Server message handler function
+---@param func fun(method: string, head: RttpMessage.Header, body: any, msg: RttpMessage): code: integer, contentType: string, body: any, head: nil|RttpMessage.Header Server message handler function
 rttp.handleMsg = function(func)
     expect(1, func, "function")
     msgHandler = func

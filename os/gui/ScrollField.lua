@@ -12,7 +12,7 @@ local ScrollField = {
 }
 setmetatable(ScrollField, { __index = pos.gui.mt.UiElement })
 
----Initilizes the scroll field
+---Initializes the scroll field
 ---@param x number X position
 ---@param y number Y position
 ---@param w number Width
@@ -42,9 +42,9 @@ function ScrollField:draw(window)
         end
     end
 end
----Override. Proccesses <code>mouse_scroll</code> events for the scroll field
+---Override. Processes <code>mouse_scroll</code> events for the scroll field
 ---@param event table Event table
----@param window Window The window the scroll field is proccessed in
+---@param window Window The window the scroll field is processed in
 function ScrollField:process(event, window)
     if event[1] == 'mouse_scroll' then
         local _, dir, x, y = table.unpack(event)
@@ -101,7 +101,7 @@ end
 function ScrollField:removeElement(index)
     self._elements[index] = nil
 end
----Clears all elemetns from scroll field. Next element will be id 0
+---Clears all elements from scroll field. Next element will be id 0
 function ScrollField:clearElements()
     self._elements = {}
     self.__elementIndex = 0

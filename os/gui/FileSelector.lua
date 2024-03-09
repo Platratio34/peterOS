@@ -148,7 +148,7 @@ end
 ---@constructor FileSelector
 ---@param root string starting path of the selector
 ---@param action string select button text
----@param onAction function On action event, function(path, fileSelectorWindow)
+---@param onAction fun(path: string, fileSelectorWindow: Window) On action event, function(path, fileSelectorWindow)
 ---@return FileSelector fileSelector
 function pos.gui.FileSelector(root, action, onAction)
     local o = {

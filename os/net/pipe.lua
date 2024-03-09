@@ -196,6 +196,7 @@ function NetPipe:poll(time)
         if event[1] == NetPipe.ON_PACKET_EVENT and event[2] == self then
             return true
         end
+        return false
     end)
     if not self:hasData() then
         return nil

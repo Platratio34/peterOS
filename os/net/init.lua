@@ -129,7 +129,7 @@ end
 -- messages waiting processing
 local messages = {}
 
-local msgHandlers = {}
+local msgHandlers = {} ---@type fun(msg: NetMessage)[]
 local msgHandlerCID = 1;
 local function onMsg(msg)
     for id, handler in pairs(msgHandlers) do
@@ -1042,7 +1042,7 @@ end
 ---Check function should return true on the message you want, and takes the message as a parameter.
 ---@param port number Network port to listen on (-1 for any)
 ---@param time number Timeout in seconds
----@param check function Message check function, takes message as parameter, and returns continue waiting
+---@param check fun(msg: NetMessage): boolean Message check function, takes message as parameter, and returns continue waiting
 ---@return string|NetMessage rsp Message or error string
 net.waitForMsgAdv = function(port, time, check)
     expect(1, port, "number")
@@ -1085,7 +1085,7 @@ net.validMsg = function(port, message)
 end
 
 ---Register a message handler
----@param func function Handler function, takes a message object
+---@param func fun(msg: NetMessage) Handler function, takes a message object
 ---@return number id Handler Id, used to unregister handlers
 net.registerMsgHandler = function(func)
     msgHandlers[msgHandlerCID .. ""] = func

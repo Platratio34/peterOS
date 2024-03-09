@@ -4,7 +4,7 @@ local rtml = {}
 ---@field type string Element type
 ---@field x number X position of the element
 ---@field y number Y position of the element
----@field color nil|color|string Element forground color
+---@field color nil|color|string Element foreground color
 ---@field bgColor nil|color|string Element background color
 ---@field id nil|string Element ID
 ---@field text nil|string Element text
@@ -40,7 +40,7 @@ end
 ---@param x number X position
 ---@param y number Y position
 ---@param text string Element text
----@param href string Link destinaiton, can be absolute (<code>"/path"</code>), or relative (<code>"path"</code>)
+---@param href string Link destination, can be absolute (<code>"/path"</code>), or relative (<code>"path"</code>)
 ---@return RTMLElement
 function rtml.createLink(x, y, text, href)
     local el = rtml.createElement(rtml.TYPE_LINK, x, y)
@@ -91,7 +91,7 @@ local RTMLContext = {
     elements = {}
 }
 
----Create a new RTML context (equivelent to a window)
+---Create a new RTML context (equivalent to a window)
 ---@return RTMLContext context
 function rtml.createContext()
     local context = {
@@ -119,7 +119,7 @@ end
 ---@param x number X position
 ---@param y number Y position
 ---@param text string Element text
----@param href string Link destinaiton, can be absolute (<code>"/path"</code>), or relative (<code>"path"</code>)
+---@param href string Link destination, can be absolute (<code>"/path"</code>), or relative (<code>"path"</code>)
 function RTMLContext:addLink(x, y, text, href)
     self:addElement(rtml.createLink(x, y, text, href))
 end

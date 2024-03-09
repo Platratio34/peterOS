@@ -44,7 +44,7 @@ function LocalUserMT.__call(name, pass, perm)
     return user
 end
 
----Initilize a new LocalUser
+---Initialize a new LocalUser
 ---@param name string username
 ---@param pass string password
 ---@param perm {str: boolean} permission tree
@@ -69,7 +69,7 @@ function LocalUser.fromFile(name)
     local user = textutils.unserialise(f.readAll())
     f.close()
     if not user then
-        osLog:error('Userdata file for "' .. name .. '" was coruppted')
+        osLog:error('Userdata file for "' .. name .. '" was corrupted')
         return nil
     end
     setmetatable(user, LocalUserMT)

@@ -19,23 +19,23 @@ local TextBox = {
 }
 setmetatable(TextBox, { __index = pos.gui.mt.UiElement })
 
----Initilizes the TextBox
+---Initializes the TextBox
 ---@param x number X position
 ---@param y number Y position
 ---@param background color|nil Background color
----@param foregroud color|nil Foreground color (text color)
+---@param foreground color|nil Foreground color (text color)
 ---@param text string text
 ---@param w number|nil Width of the text box, defaults to length of <code class=var>text</code>
-function TextBox:__init__(x, y, background, foregroud, text, w)
+function TextBox:__init__(x, y, background, foreground, text, w)
     self.x = x
     self.y = y
     self.bg = background or self.bg
-    self.fg = foregroud or self.fg
+    self.fg = foreground or self.fg
     self.w = w or string.len(text)
     self:setText(text)
 end
 
----Sets the text of the text box, updates line calucations
+---Sets the text of the text box, updates line calculations
 ---@param text string new text
 function TextBox:setText(text)
     expect(1, text, 'string')
