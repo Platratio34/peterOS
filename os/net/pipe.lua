@@ -1,4 +1,5 @@
 ---@class NetPipe
+---@field name string
 ---@field connected boolean
 ---@field _open boolean
 ---@field remote NetAddress
@@ -21,11 +22,18 @@ local NetPipe = {
     __nextPacketId = 0,
     TYPE = "pipe",
     MAX_TRIES = 3,
-    ON_PACKET_EVENT = "pipe_on_packet"
+    ON_PACKET_EVENT = "pipe_on_packet",
+    name = ""
 }
 local PipeMT = {
     __index = NetPipe,
 }
+
+---Net Pipe module
+local pipes = {
+}
+---Net Pipe module
+net.pipes = pipes
 
 ---Instantiate a new network pipe
 ---@param remote NetAddress address of the other end of the pipe
@@ -37,8 +45,8 @@ local function instantiate(remote, port)
     o:__init__(remote, port)
     return o
 end
-net.NetPipe = instantiate
-net.NetPipeType = NetPipe.TYPE ---Message type for net pipes
+pipes.NetPipe = instantiate
+pipes.NetPipeType = NetPipe.TYPE ---Message type for net pipes
 
 ---**Internal** Initialize the pipe
 ---@param remote NetAddress address of the other end of the pipe
@@ -195,6 +203,12 @@ function NetPipe:poll(time)
     return self.__dataQueueIn:dequeue()
 end
 
+---Returns if the pipe has been opened
+---@return boolean open
+function NetPipe:isOpen()
+    return self._open
+end
+
 ---@class NetPipe.Packet
 ---@field id number packet id, -1 for control messages
 ---@field data any packet data, action for control message
@@ -206,3 +220,60 @@ end
 ---@class NetPipe.Header : NetMessage.Header
 ---@field originPipeId nil|number Origin NAT pipe ID
 ---@field destPipeId nil|number Destination NAT pipe ID
+
+local namedPipes = {} ---@type table<string, NetPipe> Table of named pipes
+
+---Returns if a pipe with name exists
+---@param name string pipe name
+---@return boolean exists
+function pipes.pipeExists(name)
+    return namedPipes[name] ~= nil
+end
+
+---Make a new named pipe. **CLOSES PIPE IF ONE EXISTS**
+---@param name string pipe name
+---@param remote NetAddress pipe remote address
+---@param port number pipe port
+---@return NetPipe pipe
+function pipes.makePipe(name, remote, port)
+    if namedPipes[name] then
+        if namedPipes[name]:isOpen() then
+            namedPipes[name]:close()
+        end
+    end
+    local pipe = instantiate(remote, port)
+    namedPipes[name] = pipe
+    pipe.name = name
+    return pipe
+end
+
+---Gets named pipe, or creates one if not present, returning the pipe
+---@param name string pipe name
+---@param remote NetAddress pipe remote address
+---@param port number pipe port
+---@return NetPipe pipe
+function pipes.getOrMakePipe(name, remote, port)
+    if namedPipes[name] then
+        return namedPipes[name]
+    end
+    local pipe = instantiate(remote, port)
+    namedPipes[name] = pipe
+    pipe.name = name
+    return pipe
+end
+
+---Gets named pipe
+---@param name string pipe name
+---@return NetPipe|nil pipe
+function pipes.getPipe(name)
+    return namedPipes[name]
+end
+
+---Closes the named pipe and removes it
+---@param name string pipe name
+function pipes.closePipe(name)
+    if namedPipes[name] then
+        namedPipes[name]:close()
+        namedPipes[name] = nil
+    end
+end
