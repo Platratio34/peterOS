@@ -51,8 +51,8 @@ For more information see the user wiki page
 ## Libraries
 
 - [Improved string library](https://github.com/Platratio34/peterOS/wiki/String-library)
-- SHA256 hashing `pos.require(hash.sha256)`
-- ECC encryption (used for networking) `pos.require(eec)`
+- SHA256 hashing `pos.require('hash.sha256')`
+- ECC encryption (used for networking) `pos.require('eec')`
 - Config `pos.Config()`
 - Logger `pos.Logger()`
 - CLI Parser `pos.Parser()`
