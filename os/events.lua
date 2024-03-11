@@ -1,7 +1,7 @@
--- local expect = require "cc.expect"
 local args = {...}
 local log = args[1]
-local expect = args[2]
+local require = args[2]
+local expect = require("cc.expect")
 
 local eventHandlers = {} ---@type table<number, EventHandler>
 local eventHandlerId = 0
