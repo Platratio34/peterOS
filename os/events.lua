@@ -18,7 +18,7 @@ local function pullEventRaw(sFilter)
             end)
             if not s then
                 if eHandler.name then
-                    log:error(('Event handler #d:"%s" error: %s'):format(eId, eHandler.name, r))
+                    log:error(('Event handler %d:"%s" error: %s'):format(eId, eHandler.name, r))
                 else
                     log:error(('Event handler %d error: %s'):format(eId, r))
                 end
