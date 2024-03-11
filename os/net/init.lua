@@ -73,6 +73,7 @@ local leaseTime = 9e99
 
 --- Default message wait time out in seconds
 net.DEFAULT_TIMEOUT = 5
+net.NET_MESSAGE_EVENT = "net_message" ---On net message event
 
 ---Format a numeric IPV4 in the the standard format
 ---@param ip NetAddress IP address either as number, or hardware address
@@ -567,7 +568,7 @@ local function eventHandler(event)
                 net.reply(p, self, head, body)
             end
 
-            os.queueEvent("net_message", msg)
+            os.queueEvent(net.NET_MESSAGE_EVENT, msg)
             onMsg(msg)
         elseif msg.dest == ipAddr then
             logVerboseMessage('recv: ' .. net.stringMessage(msg))
@@ -582,7 +583,7 @@ local function eventHandler(event)
                     net.reply(p, self, head, body)
                 end
 
-                os.queueEvent("net_message", msg)
+                os.queueEvent(net.NET_MESSAGE_EVENT, msg)
                 onMsg(msg)
             end
         elseif msg.dest == -1 then

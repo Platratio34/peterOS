@@ -144,7 +144,7 @@ function NetPipe:open()
     end
     self.__remoteAddr = net.realizeHostname(self.remote)
     self.__handlerID = pos.addEventHandler(function(event)
-        if event[1] == "net_message" then
+        if event[1] == net.NET_MESSAGE_EVENT then
             local msg = event[2]
             ---@cast msg NetPipe.Message
             print('port: `' .. msg.port .. '`?=`' .. self.port .. '`')
@@ -166,7 +166,7 @@ function NetPipe:open()
             end
             self:_sendDataPacket(self.__lastPacket)
         end
-    end, { "net_message", "timer" })
+    end, { net.NET_MESSAGE_EVENT, "timer" })
     net.open(self.port)
     self._open = true
 end
