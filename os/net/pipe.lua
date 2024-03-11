@@ -143,10 +143,11 @@ function NetPipe:open()
             if msg.port ~= self.port then return end
             if msg.type ~= NetPipe.TYPE then return end
             if msg.origin ~= self.__remoteAddr then return end
-            self:_onPacket(msg.body)
             if msg.header.originPipeId then
+                if self.__remotePipeId and self.__remotePipeId ~= msg.header.originPipeId then return end
                 self.__remotePipeId = msg.header.originPipeId
             end
+            self:_onPacket(msg.body)
         elseif event[1] == "timer" and event[2] == self.__timer then
             if self.__tries > NetPipe.MAX_TRIES then
                 self:close()
