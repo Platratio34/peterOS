@@ -123,7 +123,7 @@ function NetPipe:_onPacket(packet)
         end
         return
     end
-    if packet.id ~= self.self.__lastRemoteId + 1 then -- out of order packet
+    if packet.id ~= self.__lastRemoteId + 1 then -- out of order packet
         print("Out of order packet")
         return
     end
@@ -166,7 +166,7 @@ function NetPipe:open()
             end
             self:_sendDataPacket(self.__lastPacket)
         end
-    end, { net.NET_MESSAGE_EVENT, "timer" })
+    end)
     net.open(self.port)
     self._open = true
 end

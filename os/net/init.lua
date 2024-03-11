@@ -369,7 +369,7 @@ local function waitForMsg(check, time)
     end
     while cont do
         local event = { os.pullEvent() }
-        if event[1] == "net_message" then
+        if event[1] == net.NET_MESSAGE_EVENT then
             local _, message = table.unpack(event)
             ---@cast message NetMessage
             local port = message.port
@@ -593,7 +593,7 @@ local function eventHandler(event)
                 net.reply(p, self, head, body)
             end
 
-            os.queueEvent("net_message", msg)
+            os.queueEvent(net.NET_MESSAGE_EVENT, msg)
             onMsg(msg)
         end
     end)
