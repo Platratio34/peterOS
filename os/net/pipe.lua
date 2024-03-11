@@ -15,9 +15,9 @@
 ---@field private __timer number Timer ID for confirmation timeout
 ---@field private __tries number Number of attempts to send last data packet
 ---@field private __remotePipeId number|nil **NET LEVEL** NAT ID for pipe at remote
----@field TYPE string **STATIC** message type for pipe
----@field MAX_TRIES number **STATIC** maximum retries to send a packet
----@field ON_PACKET_EVENT string **STATIC** os event type for on packet
+---@field TYPE string **STATIC** message type for pipe: `pipe`
+---@field MAX_TRIES number **STATIC** maximum retries to send a packet: `3`
+---@field ON_PACKET_EVENT string **STATIC** os event type for on packet: `pipe_on_packet`
 local NetPipe = {
     __nextPacketId = 0,
     TYPE = "pipe",
@@ -39,6 +39,7 @@ net.pipes = pipes
 ---@param remote NetAddress address of the other end of the pipe
 ---@param port number port for the pipe
 ---@return NetPipe pipe
+---@nodiscard
 local function instantiate(remote, port)
     local o = {}
     setmetatable(o, PipeMT)
@@ -46,7 +47,7 @@ local function instantiate(remote, port)
     return o
 end
 pipes.NetPipe = instantiate
-pipes.NetPipeType = NetPipe.TYPE ---Message type for net pipes
+pipes.NetPipeType = NetPipe.TYPE ---Message type for net pipes: `pipe`
 
 ---**Internal** Initialize the pipe
 ---@param remote NetAddress address of the other end of the pipe
@@ -122,7 +123,10 @@ function NetPipe:_onPacket(packet)
         end
         return
     end
-    if packet.id ~= self.self.__lastRemoteId + 1 then return end -- out of order packet
+    if packet.id ~= self.self.__lastRemoteId + 1 then -- out of order packet
+        print("Out of order packet")
+        return
+    end
 
     self:_sendPacket({
         id = -1,
@@ -142,6 +146,7 @@ function NetPipe:open()
     self.__handlerID = pos.addEventHandler(function(event)
         if event[1] == "net_message" then
             local msg = event[2]
+            print(net.stringMessage(msg))
             ---@cast msg NetPipe.Message
             if msg.port ~= self.port then return end
             if msg.type ~= NetPipe.TYPE then return end
