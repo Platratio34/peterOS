@@ -147,7 +147,7 @@ function NetPipe:open()
         if event[1] == net.NET_MESSAGE_EVENT then
             local msg = event[2]
             ---@cast msg NetPipe.Message
-            print('port: `' .. msg.port .. '`?=`' .. self.port .. '`')
+            print('port: `' .. msg.port .. '`?=`' .. self.port .. '` '..(msg.port == self.port))
             if msg.port ~= self.port then return end
             print('type: ' .. msg.type .. '?=' .. NetPipe.TYPE .. '`')
             if msg.header.type ~= NetPipe.TYPE then return end
