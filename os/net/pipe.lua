@@ -1,7 +1,7 @@
 ---@class NetPipe
 ---@field name string Pipe name
 ---@field connected boolean If the pipe is connected to the remote
----@field _open boolean If the pipe is open (ready to accept incoming and outgoing data)
+---@field protected _open boolean If the pipe is open (ready to accept incoming and outgoing data)
 ---@field remote NetAddress Pipe end address (IP or hostname)
 ---@field private __remoteAddr NetAddress IP address of pipe end
 ---@field port number Networking port for pipe
@@ -277,7 +277,7 @@ end
 ---Closes the named pipe and removes it
 ---@param name string pipe name
 function pipes.closePipe(name)
-    if namedPipes[name] then
+    if namedPipes[name] and namedPipes[name]:isOpen() then
         namedPipes[name]:close()
         namedPipes[name] = nil
     end
