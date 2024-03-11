@@ -62,7 +62,7 @@ local function instanceClass(class, ...)
     local o = {}
     setmetatable(o, {__index = class})
     if (o.__init__) then
-        o:__init(...)
+        o:__init__(...)
     end
     return o
 end
