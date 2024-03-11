@@ -146,10 +146,10 @@ function NetPipe:open()
     self.__handlerID = pos.addEventHandler(function(event)
         if event[1] == "net_message" then
             local msg = event[2]
-            print(net.stringMessage(msg))
             ---@cast msg NetPipe.Message
             if msg.port ~= self.port then return end
             if msg.type ~= NetPipe.TYPE then return end
+            print(msg.origin ..'?='.. self.__remoteAddr)
             if msg.origin ~= self.__remoteAddr then return end
             if msg.header.originPipeId then
                 if self.__remotePipeId and self.__remotePipeId ~= msg.header.originPipeId then return end
