@@ -1,15 +1,3 @@
-local classList = fs.list('/os/lib/classes/')
-if type(classList) == 'table' then
-    for _, file in pairs(classList) do
-        if not fs.isDir('/os/lib/classes/' .. file) then
-            shell.run('/os/lib/classes/' .. file)
-        end
-    end
-else
-    error("Could not load OS classes; Could not get list")
-    return
-end
-
 shell.run("/os/net/init.lua")
 shell.run("/os/gui/gui.lua")
 

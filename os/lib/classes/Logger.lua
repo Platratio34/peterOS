@@ -119,6 +119,8 @@ function Logger:_writeError(str)
     end
 end
 
+---Get a formate string for the current time
+---@return string time
 function Logger:getTimeString()
     if not self.logTime then
         return ''

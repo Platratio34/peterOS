@@ -8,15 +8,28 @@ print("Starting PeterOS")
 _G.newPackagePath =
 "/?;/?.lua;/?/init.lua;/os/?;/os/?.lua;/os/?/init.lua;/os/lib/?;/os/lib/?.lua;/os/lib/?/init.lua;/rom/modules/main/?;/rom/modules/main/?.lua;/rom/modules/main/?/init.lua"
 
+_G.user = {}
+_G.pos = {}
+
 ---Set the package path to _G.newPackagePath
-local function pathSet()
+function pos.pathSet()
     package.path = newPackagePath
 end
 
-pathSet()
+pos.pathSet()
 local _ = require("os.lib.string")
-local str = require(".os.lib.strings")
-local sha256 = require("hash.sha256")
+
+local classList = fs.list('/os/lib/classes/')
+if type(classList) == 'table' then
+    for _, file in pairs(classList) do
+        if not fs.isDir('/os/lib/classes/' .. file) then
+            shell.run('/os/lib/classes/' .. file)
+        end
+    end
+else
+    error("Could not load OS classes; Could not get list")
+    return
+end
 
 local osFs = {
     open = fs.open,
@@ -36,16 +49,13 @@ local su = false
 
 local version = ""
 
-local Logger = require('os.lib.logger')
-local log = Logger('log.log', false)
+---OS Log
+local log = pos.Logger('log.log', false, true)
+pos.log = log ---OS log
 if not log then
     error('Could not open OS Log')
     return
 end
-
--- local logF = fsOpen("log.log", "w")
--- logF.write("OS Log:\n")
--- logF.close()
 
 if not fs.exists("/home") then
     fs.makeDir("/home")
@@ -58,7 +68,7 @@ end
 ---@param class table Class table
 ---@param ... any constructor arguments
 ---@return table instance
-local function instanceClass(class, ...)
+function pos.instanceClass(class, ...)
     local o = {}
     setmetatable(o, {__index = class})
     if (o.__init__) then
@@ -66,12 +76,11 @@ local function instanceClass(class, ...)
     end
     return o
 end
--- local function log(msg)
---     local logF = fsOpen("log.log", "a")
---     logF.write(msg.."\n")
---     logF.close()
--- end
 
+---Realize full path from relative path and execution location
+---@param path string
+---@param loc string
+---@return string fullPath
 local function realizePathL(path, loc)
     expect(1, path, "string")
     expect(2, loc, "string")
@@ -81,25 +90,22 @@ local function realizePathL(path, loc)
         return appdataPath .. path:sub(adpE + 1)
     end
     
-    if str.start(loc, "rom/") then
-        if not str.start(path, "/") then path = "/" .. path end
+    if loc:start("rom/") then
+        if not path:start("/") then path = "/" .. path end
         return path
     end
-    -- print("Realizing path: "..loc..", "..path)
-    -- path = path:gsub("%%appdata%%", appdataPath)
-    -- log(path)
-    if str.start(path, "/") then
-        while str.start(path, "/") do
+    if path:start("/") then
+        while path:start("/") do
             path = string.sub(path, 2)
         end
         return "/" .. path
     end
     if loc == "" then
-        if not str.start(path, "/") then path = "/" .. path end
+        if not path:start("/") then path = "/" .. path end
         return path
     end
-    local pA = str.split(path, "/")
-    local lA = str.split(loc, "/")
+    local pA = path:split("/")
+    local lA = loc:split("/")
     if lA[1] == "" then
         table.remove(lA, 1)
     end
@@ -107,7 +113,7 @@ local function realizePathL(path, loc)
         table.remove(pA, 1)
     end
     if pA[1] == lA[1] then
-        if not str.start(path, "/") then path = "/" .. path end
+        if not path:start("/") then path = "/" .. path end
         return path
     end
 
@@ -124,12 +130,11 @@ local function realizePathL(path, loc)
         rtn = rtn .. "/" .. lA[i]
     end
     return rtn
-    -- return '/'..fs.combine(loc,path)
 end
 ---Realize path relative to current program
 ---@param path string relative program
 ---@return string path Absolute path
-local function realizePath(path)
+function pos.realizePath(path)
     expect(1, path, "string")
 
     local pgm = shell.getRunningProgram()
@@ -140,38 +145,32 @@ local function realizePath(path)
     local tP = path
     return realizePathL(path, loc)
 end
+pos.relizePath = pos.realizePath
 
+---Check if a file should be read or writeable
+---@param path string file path
+---@return boolean|"r" allowed if the file should be accessible, or read only
 local function allowedFile(path)
     expect(1, path, "string")
 
     if su then return true end
-    -- local pgm = shell.getRunningProgram()
-    -- local loc = fs.getDir(pgm)
-    -- local tP = path
-    path = realizePath(path)
+    path = pos.realizePath(path)
     -- log(pgm .. " | " .. loc .. ", " .. tP .. ", " .. path)
-    if str.start(path, "startup.lua") then
+    if path:start("startup.lua") then
         return false
-    end
-    if str.cont(path, ".userDat") then
+    elseif path:cont(".userDat") then
         return false
-    end
-    if str.start(path, "/hw.addr") then
+    elseif path:start("/hw.addr") then
         return true
-    end
-    if str.start(path, "/home/") then
+    elseif path:start("/home/") then
         return true
-    end
-    if str.start(path, "/disk") then
+    elseif path:start("/disk") then
         return true
-    end
-    if str.start(path, "/mnt/") then
+    elseif path:start("/mnt/") then
         return true
-    end
-    if path == "/os/pgm-get-manifest.lua" or path == "/os/pgms.lua" then
+    elseif path == "/os/pgm-get-manifest.lua" or path == "/os/pgms.lua" then
         return true
-    end
-    if str.start(path, "/os/bin/") then
+    elseif path:start("/os/bin/") then
         return true
     end
     return "r"
@@ -181,7 +180,7 @@ local function open(_path, mode)
     expect(1, _path, "string")
     expect(2, mode, "string")
 
-    _path = realizePath(_path)
+    _path =pos.realizePath(_path)
     local r = allowedFile(_path)
     if r == true then
         return osFs.open(_path, mode)
@@ -195,26 +194,23 @@ local function open(_path, mode)
         return nil
     end
 end
+fs.open = open
 
 local function exists(_path)
     expect(1, _path, "string")
 
-    -- _path = _path:gsub("%%appdata", "/home/.appdata")
     local adpS, adpE = _path:find('%%appdata%%')
     if adpS then
         _path =  appdataPath .. _path:sub(adpE+1)
     end
     return osFs.exists(_path)
-    -- r = allowedFile(_path)
-    -- if r==false then return false
-    -- else return fsExists(_path)
-    -- end
 end
+fs.exists = exists
 
 local function isReadOnly(_path)
     expect(1, _path, "string")
 
-    _path = realizePath(_path)
+    _path = pos.realizePath(_path)
     local r = allowedFile(_path)
     if r == true then
         return osFs.isReadOnly(_path)
@@ -222,13 +218,14 @@ local function isReadOnly(_path)
         return true
     end
 end
+fs.isReadOnly = isReadOnly
 
 local function move(_src, _dest)
     expect(1, _src, "string")
     expect(2, _dest, "string")
 
-    _src = realizePath(_src)
-    _dest = realizePath(_dest)
+    _src = pos.realizePath(_src)
+    _dest = pos.realizePath(_dest)
     local rS = allowedFile(_src)
     local rD = allowedFile(_dest)
     if rS == true and rD == true then
@@ -237,13 +234,14 @@ local function move(_src, _dest)
         printError("Could not move file, invalid Permissions")
     end
 end
+fs.move = move
 
 local function copy(_src, _dest)
     expect(1, _src, "string")
     expect(2, _dest, "string")
 
-    _src = realizePath(_src)
-    _dest = realizePath(_dest)
+    _src = pos.realizePath(_src)
+    _dest = pos.realizePath(_dest)
     local rS = allowedFile(_src)
     local rD = allowedFile(_dest)
     if (rS == true or rS == "r") and rD == true then
@@ -252,11 +250,12 @@ local function copy(_src, _dest)
         printError("Could not copy file, invalid Permissions")
     end
 end
+fs.copy = copy
 
 local function delete(_path)
     expect(1, _path, "string")
 
-    _path = realizePath(_path)
+    _path = pos.realizePath(_path)
     if allowedFile(_path) == true then
         osFs.delete(_path)
         return true
@@ -264,11 +263,12 @@ local function delete(_path)
     printError("Could not delete file, invalid Permissions")
     return false
 end
+fs.delete = delete
 
 local function makeDir(_path)
     expect(1, _path, "string")
 
-    _path = realizePath(_path)
+    _path = pos.realizePath(_path)
     if allowedFile(_path) == true then
         osFs.makeDir(_path)
         return true
@@ -276,16 +276,19 @@ local function makeDir(_path)
     printError("Could not create directory, invalid Permissions")
     return false
 end
+fs.makeDir = makeDir
 
 local function list(_path)
-    _path = realizePath(_path)
+    _path = pos.realizePath(_path)
     return osFs.list(_path)
 end
+fs.list = list
 
 local function isDir(_path)
-    _path = realizePath(_path)
+    _path = pos.realizePath(_path)
     return osFs.isDir(_path)
 end
+fs.isDir = isDir
 
 local users = {}
 
@@ -304,37 +307,14 @@ local function getUserData(user)
     end
     users[user] = u
     return u
-
-    -- local f = fsOpen("/" .. user .. ".userDat", "r")
-    -- if not f then
-    --     log:error('Could not read user data from '..user)
-    --     return {
-    --         name=user,
-    --         pswH='',
-    --         perm={"*"}
-    --     }
-    -- end
-    -- local dta = f.readAll()
-    -- f.close()
-    -- if str.start(dta, "{") then
-    --     local data = textutils.unserialise(dta)
-    --     return data
-    -- end
-    -- return {
-    --     name=user,
-    --     pswH=dta,
-    --     perm={"*"}
-    -- }
 end
 
 ---Set user as super user
 ---@param psw string Password
 ---@return boolean isSu If the password was correct
-local function sudo(psw)
+function user.sudo(psw)
     expect(1, psw, "string")
-
-    -- local hs = sha256.hash(psw)
-    -- local f = fsOpen("/su.userDat", "r")
+    
     local suUsrDat = getUserData("su")
     if not suUsrDat then
         log:error('Could not get su data')
@@ -342,23 +322,17 @@ local function sudo(psw)
     end
     su = suUsrDat:checkPass(psw)
     return su
-    -- local sPsw = f.readAll()
-    -- f.close()
-    -- if hs == suUsrDat.pswH then su = true
-    -- else su = false
-    -- end
-    -- return su
 end
 
 ---Check if the current user is the super user
 ---@return boolean isSu Is super user
-local function isSu()
+function user.isSu()
     return su
 end
 
 ---Gets the current POS version
 ---@return string version POS version
-local function getVersion()
+function pos.version()
     if version ~= "" then
         return version
     end
@@ -375,36 +349,21 @@ end
 ---@param cPass string Current password
 ---@param nPass string New Password
 ---@return boolean set If the password was changed
-local function setSuPass(cPass, nPass)
+function user.setSuPass(cPass, nPass)
     expect(1, cPass, "string")
     expect(2, nPass, "string")
-
-    -- local hs = sha256.hash(cPass)
-    -- local f = fsOpen("/su.userDat", "r")
-    -- local sPsw = f.readAll()
+    
     local suUsrDat = getUserData("su")
     if not suUsrDat then
         log:error('Could not get su data')
         return false
     end
     return suUsrDat:setPass(cPass, nPass)
-    -- f.close()
-    -- if not hs==suUsrDat.pswH then
-    --     printError("Invalid password")
-    --     return false
-    -- end
-    -- local nh = sha256.hash(nPass)
-    -- suUsrDat.pswH = nh
-    -- setUserData("su", suUsrDat)
-    -- f = fsOpen("/su.userDat", "w")
-    -- f.write(nh)
-    -- f.close()
-    -- return true
 end
 
 local cUser = nil
 
-local function hasPerm(perm)
+function user.hasPerm(perm)
     if su then
         return true
     end
@@ -414,7 +373,7 @@ local function hasPerm(perm)
     return cUser:hasPerm(perm)
 end
 
-local function changeUser(name, pass)
+function user.changeUser(name, pass)
     if name == '' then
         cUser = nil
     end
@@ -429,63 +388,19 @@ local function changeUser(name, pass)
     return false
 end
 
-local function getUser()
+function user.getUser()
     if not cUser then
         return nil
     end
     return cUser.name
 end
 
-_G.user = {
-    isSu = isSu,
-    sudo = sudo,
-    setSuPass = setSuPass,
-    hasPerm = hasPerm,
-    changeUser = changeUser,
-    getUser = getUser
-}
-
-_G.pos = {
-    pathSet = pathSet,
-    version = getVersion,
-    realizePath = realizePath,
-    relizePath = realizePath,
-    log = log,
-    instanceClass = instanceClass
-}
-
-fs.open = open
-fs.exists = exists
-fs.isReadOnly = isReadOnly
-fs.move = move
-fs.copy = copy
-fs.delete = delete
-fs.makeDir = makeDir
-fs.list = list
-fs.isDir = isDir
-
 local osEvents = loadfile("/os/events.lua")(log, require)
-
--- local requireO = require
--- local logF = fsOpen("thing.log", "w")
--- logF.write("");
--- logF.close()
--- function requireN(path)
---     local logF = fsOpen("thing.log", "a")
---     logF.write("\n")
---     logF.write(path.."\n")
---     logF.write(package.path.."\n")
---     logF.close()
---     return requireO(path)
--- end
-
--- require = requireN
 
 ---Require function.
 ---Works to require pos packages from /os/ and /os/lib/
 ---@param path string package name and path
 ---@return table package
----@diagnostic disable-next-line: duplicate-set-field
 _G.pos.require = function(path)
     expect(1, path, "string")
 
@@ -505,7 +420,7 @@ shell.run("/os/init.lua")
 if (_G.pgmGet) then pgmGet.init(osFs.open)
 else printError('Could not start pgm-get, consider updating it with pgm-get install pgm-get')
 end
-print("Finished Loading " .. getVersion())
+print("Finished Loading " .. pos.version())
 local lbl = os.getComputerLabel()
 if not (lbl == nil) then
     print("")
@@ -520,7 +435,7 @@ elseif vRsp.getResponseCode() ~= 200 then
     printError("HTTP response code " .. vRsp.getResponseCode() .. " msg: " .. vRsp.readAll())
 else
     local lVersion = vRsp.readAll()
-    if getVersion() ~= lVersion then
+    if pos.version() ~= lVersion then
         print('')
         print('OS is out of date, latest version ' .. lVersion)
         print('Use `osUpdate` to update to latest')
@@ -562,7 +477,7 @@ if fs.exists("/home/startup") then
 
     for i = 1, #startupFiles do
         local f = startupFiles[i]
-        if (str.cont(f, ".lua")) then
+        if (f:cont(".lua")) then
             shell.run("/home/startup/" .. f)
         end
     end
