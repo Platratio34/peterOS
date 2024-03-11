@@ -147,11 +147,11 @@ function NetPipe:open()
         if event[1] == "net_message" then
             local msg = event[2]
             ---@cast msg NetPipe.Message
-            -- print('port: '..msg.port ..'?='.. self.port)
+            print('port: '..msg.port ..'?='.. self.port)
             if msg.port ~= self.port then return end
-            -- print('type: '..msg.type ..'?='.. NetPipe.TYPE)
+            print('type: '..msg.type ..'?='.. NetPipe.TYPE)
             if msg.header.type ~= NetPipe.TYPE then return end
-            -- print('origin: '..msg.origin ..'?='.. self.__remoteAddr)
+            print('origin: '..msg.origin ..'?='.. self.__remoteAddr)
             if msg.origin ~= self.__remoteAddr then return end
             if msg.header.originPipeId then
                 if self.__remotePipeId and self.__remotePipeId ~= msg.header.originPipeId then return end
