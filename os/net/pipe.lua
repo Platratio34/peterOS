@@ -2,8 +2,8 @@
 ---@field name string Pipe name
 ---@field connected boolean If the pipe is connected to the remote
 ---@field _open boolean If the pipe is open (ready to accept incoming and outgoing data)
----@field remote NetAddress Pipe end address
----@field private __remoteAddr number|string IP address of pipe end
+---@field remote NetAddress Pipe end address (IP or hostname)
+---@field private __remoteAddr NetAddress IP address of pipe end
 ---@field port number Networking port for pipe
 ---@field private __nextPacketId number ID of next outgoing data packet
 ---@field private __lastPacket nil|table Last send data packet
@@ -143,10 +143,11 @@ function NetPipe:open()
             if msg.port ~= self.port then return end
             if msg.type ~= NetPipe.TYPE then return end
             if msg.origin ~= self.__remoteAddr then return end
-            self:_onPacket(msg.body)
             if msg.header.originPipeId then
+                if self.__remotePipeId and self.__remotePipeId ~= msg.header.originPipeId then return end
                 self.__remotePipeId = msg.header.originPipeId
             end
+            self:_onPacket(msg.body)
         elseif event[1] == "timer" and event[2] == self.__timer then
             if self.__tries > NetPipe.MAX_TRIES then
                 self:close()

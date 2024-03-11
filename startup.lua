@@ -464,7 +464,7 @@ fs.makeDir = makeDir
 fs.list = list
 fs.isDir = isDir
 
-local osEvents = loadfile("/os/events.lua")(log)
+local osEvents = loadfile("/os/events.lua")(log, expect)
 
 -- local requireO = require
 -- local logF = fsOpen("thing.log", "w")
