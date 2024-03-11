@@ -92,10 +92,13 @@ end
 ---**Internal** Send a generic packet to the remote
 ---@param packet NetPipe.Packet packet to send
 function NetPipe:_sendPacket(packet)
-    net.sendAdv(self.port, self.__remoteAddr, {
+    local r = net.sendAdv(self.port, self.__remoteAddr, {
         type = NetPipe.TYPE,
         destPipeId = self.__remotePipeId
     }, packet)
+    if r == -1 then
+        error("PipeError: Unable to send packet", 3)
+    end
 end
 
 ---**Internal** Processes an incoming packet
