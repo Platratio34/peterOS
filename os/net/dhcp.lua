@@ -637,13 +637,7 @@ local function handler(msg)
             saveDns()
         end
     elseif msg.header.type == "rttp" then -- Access DHCP/DNS webpage
-        ---@cast msg RttpMessage
-        -- if msg.header.method == "GET" then
-        --     log:info("Received RTTP GET message")
-        --     net.reply(10080, msg, { type = "rttp", method = "RETURN", content_type = "text/plain" },
-        --         "DHCP: " .. net.getHostname())
-        -- end
-        rttpMsgHandler(msg)
+        rttpMsgHandler(msg --[[@as RttpMessage]])
     end
 end
 
