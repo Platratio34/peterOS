@@ -1,4 +1,5 @@
 ---@class NetPipe
+---@field id number **Read Only** Pipe ID
 ---@field name string Pipe name
 ---@field connected boolean If the pipe is connected to the remote
 ---@field protected _open boolean If the pipe is open (ready to accept incoming and outgoing data)
@@ -29,6 +30,8 @@ local PipeMT = {
     __index = NetPipe,
 }
 
+local nextId = 0
+
 ---Net Pipe module
 local pipes = {
 }
@@ -44,6 +47,8 @@ local function instantiate(remote, port)
     local o = {}
     setmetatable(o, PipeMT)
     o:__init__(remote, port)
+    o.id = nextId
+    nextId = nextId + 1
     return o
 end
 pipes.NetPipe = instantiate
@@ -86,8 +91,10 @@ end
 function NetPipe:_sendDataPacket(packet)
     self.__lastPacket = packet
     self:_sendPacket(packet)
+    self.__waiting = true
     self.__timer = os.startTimer(5)
     self.__tries = self.__tries + 1
+    -- print("set data packet "..packet.id)
 end
 
 ---**Internal** Send a generic packet to the remote
@@ -115,16 +122,18 @@ function NetPipe:_onPacket(packet)
             net.unregisterMsgHandler(self.__handlerID)
             self.connected = false
         elseif packet.data == "GOT" then
+            os.cancelTimer(self.__timer)
+            self.__timer = -1
+            self.__tries = 0
             self.__waiting = false
             if self.__packetQueueOut:size() > 0 then
                 self:_sendDataPacket(self.__packetQueueOut:dequeue())
             end
-            self.__tries = 0
         end
         return
     end
     if packet.id ~= self.__lastRemoteId + 1 then -- out of order packet
-        print("Out of order packet")
+        -- print("Out of order packet: expected "..(self.__lastRemoteId + 1).."; got "..packet.id)
         return
     end
 
@@ -147,11 +156,8 @@ function NetPipe:open()
         if event[1] == net.NET_MESSAGE_EVENT then
             local msg = event[2]
             ---@cast msg NetPipe.Message
-            print('port: `' .. msg.port .. '`?=`' .. self.port .. '` '..textutils.serialise(msg.port == self.port))
             if msg.port ~= self.port then return end
-            print('type: ' .. msg.type .. '?=' .. NetPipe.TYPE .. '`')
             if msg.header.type ~= NetPipe.TYPE then return end
-            print('origin: ' .. msg.origin .. '?=' .. self.__remoteAddr .. '`')
             if msg.origin ~= self.__remoteAddr then return end
             if msg.header.originPipeId then
                 if self.__remotePipeId and self.__remotePipeId ~= msg.header.originPipeId then return end
@@ -159,14 +165,16 @@ function NetPipe:open()
             end
             self:_onPacket(msg.body)
         elseif event[1] == "timer" and event[2] == self.__timer then
-            if self.__tries > NetPipe.MAX_TRIES then
-                self:close()
-                error("PipeError: Too many retries for pipe, closing", 0)
-                return
+            if self.__waiting then
+                if self.__tries > NetPipe.MAX_TRIES then
+                    self:close()
+                    error("PipeError: Too many retries for pipe, closing", 0)
+                    return
+                end
+                self:_sendDataPacket(self.__lastPacket)
             end
-            self:_sendDataPacket(self.__lastPacket)
         end
-    end)
+    end, nil, self.name)
     net.open(self.port)
     self._open = true
 end
@@ -203,8 +211,7 @@ function NetPipe:poll(time)
     local e = pos.waitForEventCheck(nil, function(event)
         if event[1] == "timer" and event[2] == timeout then
             return true
-        end
-        if event[1] == NetPipe.ON_PACKET_EVENT and event[2] == self then
+        elseif event[1] == NetPipe.ON_PACKET_EVENT and event[2].id == self.id then
             return true
         end
         return false
