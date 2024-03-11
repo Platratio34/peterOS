@@ -17,11 +17,15 @@ local function pullEventRaw(sFilter)
                 eHandler:try(eType, event)
             end)
             if not s then
-                log:error(('Event handler %d error: %s'):format(eId, r))
+                if eHandler.name then
+                    log:error(('Event handler #d:"%s" error: %s'):format(eId, eHandler.name, r))
+                else
+                    log:error(('Event handler %d error: %s'):format(eId, r))
+                end
             end
         end
         
-        if not sFilter or sFilter == eType then
+        if sFilter == nil or sFilter == eType then
             return table.unpack(event)
         end
     end
@@ -37,6 +41,7 @@ os.pullEvent = function(sFilter)
 end
 
 ---@class EventHandler
+---@field name nil|string Handler name
 ---@field handler fun(event: table) Handler function, takes event table
 ---@field filter nil|string[] Event filter, leave `nil` to handle all events
 local EventHandler = {}
@@ -71,13 +76,15 @@ end
 ---Add an event handler
 ---@param handler fun(event: table) Event handler function, takes event table
 ---@param filter nil|string|string[] Event type filter. Leave `nil` for all events
+---@param name nil|string **Optional** handler name
 ---@return integer handlerId Event handler Id, used to remove handler
-function pos.addEventHandler(handler, filter)
+function pos.addEventHandler(handler, filter, name)
     expect(1, handler, "function")
     expect(2, filter, "nil", 'string', 'table')
     local ehId = eventHandlerId
     eventHandlerId = eventHandlerId + 1
     local eventHandler = pos.instanceClass(EventHandler, handler, filter)
+    eventHandler.name = name
     -- setmetatable(eventHandler, { __index = EventHandler })
     -- eventHandler:__init__(handler, filter)
     eventHandlers[ehId] = eventHandler

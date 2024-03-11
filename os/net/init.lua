@@ -602,7 +602,7 @@ local function eventHandler(event)
         printError(pe)
     end
 end
-local handlerId = pos.addEventHandler(eventHandler, 'modem_message')
+local handlerId = pos.addEventHandler(eventHandler, 'modem_message', 'net')
 
 -- +------------------------+
 -- | Modem Helper Functions |
