@@ -1,6 +1,3 @@
-local clParse = {}
-_G.pos.clParse = clParse
-
 ---@class Parser Command line parser utility
 ---@field flags table<string,CLFlag> Table of command line flags
 local Parser = {

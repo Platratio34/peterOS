@@ -8,8 +8,8 @@ print("Starting PeterOS")
 _G.newPackagePath =
 "/?;/?.lua;/?/init.lua;/os/?;/os/?.lua;/os/?/init.lua;/os/lib/?;/os/lib/?.lua;/os/lib/?/init.lua;/rom/modules/main/?;/rom/modules/main/?.lua;/rom/modules/main/?/init.lua"
 
-_G.user = {}
-_G.pos = {}
+_G.user = {} ---PeterOS user module
+_G.pos = {} ---PeterOS OS module
 
 ---Set the package path to _G.newPackagePath
 function pos.pathSet()
@@ -401,7 +401,7 @@ local osEvents = loadfile("/os/events.lua")(log, require)
 ---Works to require pos packages from /os/ and /os/lib/
 ---@param path string package name and path
 ---@return table package
-_G.pos.require = function(path)
+pos.require = function(path)
     expect(1, path, "string")
 
     local pP = package.path
