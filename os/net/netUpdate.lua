@@ -12,7 +12,10 @@ local fileNames = {
     'init.lua',
     'encrypt.lua',
     'nat.lua',
-    'dhcp.lua'
+    'dhcp.lua',
+    'cmd.lua',
+    'netUpdate.lua',
+    'socket.lua'
 }
 for _, fileName in pairs(fileNames) do
     local rsp, msg = http.get(baseURL .. fileName.. cB)
