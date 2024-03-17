@@ -296,3 +296,13 @@ function sockets.closeSocket(name)
         namedSockets[name] = nil
     end
 end
+
+---Get a list of the names of all tracked sockets
+---@return string[] socketNames
+function sockets.listSockets()
+    local names = {}
+    for name, _ in pairs(namedSockets) do
+        table.insert(names, name)
+    end
+    return names
+end
