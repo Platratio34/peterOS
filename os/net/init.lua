@@ -1215,7 +1215,7 @@ net.setLogVerbose = function(vb)
 end
 
 shell.setAlias('net', '/os/net/cmd.lua')
-shell.run("/os/net/pipe.lua")
+shell.run("/os/net/socket.lua")
 
 ---@alias NetAddress number|string IP or HW address
 

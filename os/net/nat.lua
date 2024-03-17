@@ -74,8 +74,8 @@ end
 
 local messages = {}
 local connectionIds = {}
-local pipes = {}
-local pipesByOrigin = {}
+local sockets = {}
+local socketsByOrigin = {}
 
 local function check(side, port, msg)
     ---@cast msg NetMessage
@@ -132,6 +132,26 @@ local function waitForMsg()
     end
 end
 
+---Get a origin string for message
+---@param msg NetMessage
+---@return string origin
+local function getOrigin(msg)
+    local origin = msg.origin..''
+    if msg.header.conId then
+        origin = origin .. ':' .. msg.header.conId
+    end
+    return origin
+end
+---Get a destination string for message
+---@param msg NetMessage
+---@return string dest
+local function getDest(msg)
+    local dest = msg.dest..''
+    if msg.header.destConId then
+        dest = dest .. ':' .. msg.header.destConId
+    end
+    return dest
+end
 
 local cont = true
 net.ignoreMsgOnDecryptFail = false
@@ -167,10 +187,7 @@ local function handlerFunc(side, port, msg)
         else
             -- if msg.header.publicKey then msg.body.publicKey = msg.header.publicKey end
             
-            local origin = msg.origin
-            if msg.header.conId then
-                origin = origin .. msg.header.conId
-            end
+            local origin = getOrigin(msg)
             local conId = 0
             if connectionIds[origin] then
                 conId = connectionIds[origin]
@@ -184,17 +201,24 @@ local function handlerFunc(side, port, msg)
             local record = {
                 origin = msg.origin,
                 msgid = msg.msgid,
-                conId = msg.header.conId
+                conId = msg.header.conId,
+                socketId = msg.header.originSocketId
             }
 
-            if msg.header.type == net.NetPipeType then
-                local pipeId = pipesByOrigin[msg.origin][msg.dest]
-                if not pipeId then
-                    pipeId = os.epoch('utc')
-                    pipesByOrigin[msg.origin][msg.dest] = pipeId
+            if msg.header.type == net.sockets.NetSocketType then
+                ---@cast msg NetSocket.Message
+                local socketID = socketsByOrigin[msg.origin][msg.dest]
+                if not socketID then
+                    socketID = os.epoch('utc')
+                    socketsByOrigin[msg.origin][msg.dest] = socketID
                 end
-                pipes[pipeId] = record
-                msg.header.originPipeId = pipeId
+                sockets[socketID] = {
+                    origin = msg.origin,
+                    conId = msg.header.conId,
+                    socketId = msg.header.originSocketId,
+                    dest = msg.dest,
+                }
+                msg.header.destSocketId = socketID
             end
 
             ---@cast msg NetMessage
@@ -222,8 +246,14 @@ local function handlerFunc(side, port, msg)
         local conId = msg.header.destConId
         log:debug(('MSG: %s for %s: #%s:%s'):format(net.ipFormat(msg.origin), net.ipFormat(msg.dest), tostring(msg.msgid),
             tostring(conId)))
-        if msg.header.type == net.NetPipeType and pipes[msg.header.destPipeId] then
-            local record = pipes[msg.header.destPipeId]
+        if msg.header.type == net.sockets.NetSocketType and sockets[msg.header.destSocketId] then
+            ---@cast msg NetSocket.Message
+            local record = sockets[msg.header.destSocketId]
+            if(msg.origin ~= record.dest) then
+                return -- Ignore this message b/c it is from someone else trying to use this socketId
+            end
+            msg.header.destSocketId = record.socketId
+            msg.header.conId = record.conId
             cfg.inside.modem:sendMsgAdv2(port, msg.origin, record.origin, msg.header, msg.body, msg.msgid)
         elseif not (messages[conId] and messages[conId][msg.msgid]) then            -- if the message is NOT a response to an outgoing message
             if msg.header.domain == nil or msg.header.domain == cfg.domain then -- if the message is for the NAT itself
