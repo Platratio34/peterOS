@@ -69,6 +69,7 @@ local addrTbl = {}
 local dnsCache = {}
 
 local multicastSubscriptions = {} ---@type table<number, fun(ip: number, msg: NetMessage)[]>
+local multicastSubscriptionCounts = {} ---@type table<number, number>
 ---Check if the computer is subscribed to the multicast address
 ---@param ip NetAddress
 ---@return boolean isSubscribed
@@ -1146,9 +1147,10 @@ function net.multicastSubscribe(ip, handler)
     msgHandlerCID = msgHandlerCID + 1
     if multicastSubscriptions[ip] == nil then
         multicastSubscriptions[ip] = {}
+        multicastSubscriptionCounts[ip] = 0
     end
     multicastSubscriptions[ip][id] = handler
-    multicastSubscriptions._count[ip] = multicastSubscriptions._count[ip] + 1
+    multicastSubscriptionCounts[ip] = multicastSubscriptionCounts[ip] + 1
     return id
 end
 ---Remove a multicast subscription, uses ID from subscription
@@ -1162,8 +1164,8 @@ function net.multicastUnsubscribe(ip, id)
         return
     end
     multicastSubscriptions[ip][id] = nil
-    multicastSubscriptions._count[ip] = multicastSubscriptions._count[ip] - 1
-    if multicastSubscriptions._count[ip] <= 0 then
+    multicastSubscriptionCounts[ip] = multicastSubscriptionCounts[ip] - 1
+    if multicastSubscriptionCounts[ip] <= 0 then
         multicastSubscriptions[ip] = nil
     end
 end
