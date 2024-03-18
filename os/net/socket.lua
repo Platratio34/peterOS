@@ -152,6 +152,7 @@ function NetSocket:_onPacket(packet)
 end
 
 ---Open the socket. Must be called before trying to send data.
+---Will reset packet IDs and queues.
 function NetSocket:open()
     if self._open then
         error("SocketError: Socket already open", 2)
@@ -172,7 +173,6 @@ function NetSocket:open()
         elseif event[1] == "timer" and event[2] == self.__timer then
             if self.__waiting then
                 if self.__tries > NetSocket.MAX_TRIES then
-                    self.__waiting = false
                     self:close()
                     error("SocketError: Too many retries for socket, closing", 0)
                     return
@@ -183,9 +183,15 @@ function NetSocket:open()
     end, nil, self.name)
     net.open(self.port)
     self._open = true
+    self.__waiting = false
+    self.__lastPacket = nil
+    self.__lastRemoteId = -1
+    self.__nextPacketId = 0
+    self.__dataQueueIn:clear()
+    self.__packetQueueOut:clear()
 end
 
----Closes the socket and sends close message. Data can not be sent after closing.
+---Closes the socket and sends close message. Data can not be sent after closing unless queue has been re-opened.
 function NetSocket:close()
     if not self._open then
         error("SocketError: Socket was not open", 2)

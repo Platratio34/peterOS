@@ -60,3 +60,10 @@ end
 function Queue:size()
     return self.__last - self.__first + 1
 end
+
+---Clear all items from the queue
+function Queue:clear()
+    self.__arr = {}
+    self.__first = 0
+    self.__last = -1 
+end
