@@ -1,3 +1,5 @@
+local args = {...}
+
 if _G.user and not user.isSu() then
     shell.run("su")
 end
@@ -6,8 +8,9 @@ if _G.user and not user.isSu() then
     return
 end
 
-local cB = '?cb='..os.epoch('utc') % 60000
-local baseURL = 'https://raw.githubusercontent.com/Platratio34/peterOS/'..pos.versionId()..'/os/net/'
+local cB = '?cb=' .. os.epoch('utc') % 60000
+local version = args[1] or pos.versionId()
+local baseURL = 'https://raw.githubusercontent.com/Platratio34/peterOS/'..version..'/os/net/'
 local fileNames = {
     'init.lua',
     'encrypt.lua',

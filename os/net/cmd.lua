@@ -1,7 +1,7 @@
 local args = { ... }
 
 if args[1] == 'update' then
-    shell.run('/os/net/netUpdate.lua')
+    shell.run('/os/net/netUpdate.lua', args[2])
     return
 elseif args[1] == 'ip' then
     if net.getIP() < 0 then
