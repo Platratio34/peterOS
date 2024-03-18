@@ -92,13 +92,13 @@ local function check(side, port, msg)
             return false
         end
 
-        if msg.dest < 0x0 or msg.dest > 0xffffffff then -- inside valid ip range (0.0.0.0 - 255.255.255.255)
+        if msg.dest < 0x0 or msg.dest >= 0xffffffff then -- inside valid ip range (0.0.0.0 - 255.255.255.255)
             return true
         end
         if msg.dest >= 0xa9fe0000 and msg.dest <= 0xa9feffff then -- not link local
             return true
         end
-        if msg.dest >= 0xe0000000 and msg.dest <= 0xef000000 then -- not multicast
+        if msg.dest >= 0xe0000000 and msg.dest <= 0xefffffff then -- not multicast
             return true
         end
 

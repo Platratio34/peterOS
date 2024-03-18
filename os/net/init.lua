@@ -68,6 +68,19 @@ local dhcpIP = 0xC0A80000
 local addrTbl = {}
 local dnsCache = {}
 
+local multicastSubscriptions = {} ---@type table<number, fun(ip: number, msg: NetMessage)[]>
+---Check if the computer is subscribed to the multicast address
+---@param ip NetAddress
+---@return boolean isSubscribed
+local function isSubscribedTo(ip)
+    if(type(ip) ~= "number") then
+        return false
+    elseif ip < 0xe0000000 or ip > 0xefffffff then
+        return false
+    end
+    return multicastSubscriptions[ip] ~= nil
+end
+
 -- IP lease expire time
 local leaseTime = 9e99
 
@@ -132,6 +145,8 @@ local messages = {}
 
 local msgHandlers = {} ---@type fun(msg: NetMessage)[]
 local msgHandlerCID = 1;
+---Run event handlers for valid message
+---@param msg NetMessage
 local function onMsg(msg)
     for id, handler in pairs(msgHandlers) do
         -- print('running msg handler '..id)
@@ -140,6 +155,17 @@ local function onMsg(msg)
         if not suc then
             log:warn('NET Handler Error: ' .. error)
             printError('NET Handler Error: ' .. error)
+        end
+    end
+    if isSubscribedTo(msg.dest) then
+        for id, handler in pairs(multicastSubscriptions[msg.dest]) do
+            ---@cast handler fun(ip: number, msg: NetMessage)
+            local suc, error = pcall(handler, msg.dest --[[@as number]], msg)
+            -- handler(msg)
+            if not suc then
+                log:warn('NET Handler Error: ' .. error)
+                printError('NET Handler Error: ' .. error)
+            end
         end
     end
 end
@@ -602,7 +628,7 @@ local function eventHandler(event)
         printError(pe)
     end
 end
-local handlerId = pos.addEventHandler(eventHandler, 'modem_message', 'net')
+local handlerId = pos.addEventHandler(eventHandler, 'modem_message')
 
 -- +------------------------+
 -- | Modem Helper Functions |
@@ -1073,13 +1099,16 @@ net.validMsg = function(port, message)
     -- expect(2, message, "any")
     if type(message) ~= "table" then return false end
     if port < 10000 or port > 20000 then return false end
-    if message.dest == -1 then
+    if message.dest == -1 or message.dest == 0xffffffff then -- Broadcast
         return true
     end
-    if message.dest == ipAddr then
+    if isSubscribedTo(message.dest) then -- Multicast
         return true
     end
-    if ipAddr == 0x0 and message.dest == "hw:" .. hwAddr then
+    if message.dest == ipAddr then -- Unicast
+        return true
+    end
+    if ipAddr == 0x0 and message.dest == "hw:" .. hwAddr then -- Hardware Address
         return true
     end
     return false
@@ -1103,6 +1132,40 @@ end
 ---@return number id next handler id
 net.getCIDofNetHandlers = function()
     return msgHandlerCID
+end
+
+---Subscribe to a multicast group. IP must be between `224.0.0.0` (`0xe0000000`) and `239.255.255.255` (`0xefffffff`).
+---@param ip number Multicast group IP
+---@param handler fun(ip: number, msg: NetMessage)
+---@return integer id Handler Id, used to unregister subscriber
+function net.multicastSubscribe(ip, handler)
+    if ip < 0xe0000000 or ip > 0xefffffff then
+        error("Invalid IP for multicast. It must be between 224.0.0.0 and 239.255.255.255", 2)
+    end
+    local id = msgHandlerCID
+    msgHandlerCID = msgHandlerCID + 1
+    if multicastSubscriptions[ip] == nil then
+        multicastSubscriptions[ip] = {}
+    end
+    multicastSubscriptions[ip][id] = handler
+    multicastSubscriptions._count[ip] = multicastSubscriptions._count[ip] + 1
+    return id
+end
+---Remove a multicast subscription, uses ID from subscription
+---@param ip number Multicast group IP
+---@param id integer Handler Id, from `net.multicastSubscribe(ip, handler)`
+function net.multicastUnsubscribe(ip, id)
+    if ip < 0xe0000000 or ip > 0xefffffff then
+        error("Invalid IP for multicast. It must be between 224.0.0.0 and 239.255.255.255", 2)
+    end
+    if multicastSubscriptions[ip] == nil then
+        return
+    end
+    multicastSubscriptions[ip][id] = nil
+    multicastSubscriptions._count[ip] = multicastSubscriptions._count[ip] - 1
+    if multicastSubscriptions._count[ip] <= 0 then
+        multicastSubscriptions[ip] = nil
+    end
 end
 
 -- +-------------------+
