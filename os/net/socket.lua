@@ -143,10 +143,11 @@ function NetSocket:_onPacket(packet)
         data = "GOT"
     })
     self.__lastRemoteId = packet.id
-    self.__dataQueueIn:enqueue(packet.data)
-    os.queueEvent(NetSocket.ON_PACKET_EVENT, self)
     if self.onPacketCallback then
         self.onPacketCallback(packet)
+    else
+        self.__dataQueueIn:enqueue(packet.data)
+        os.queueEvent(NetSocket.ON_PACKET_EVENT, self)
     end
 end
 
