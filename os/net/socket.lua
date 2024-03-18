@@ -6,6 +6,7 @@
 ---@field remote NetAddress Socket end address (IP or hostname)
 ---@field private __remoteAddr NetAddress IP address of socket end
 ---@field port number Networking port for socket
+---@field onPacketCallback fun(packet: NetSocket.Packet)|nil On packet callback function
 ---@field private __nextPacketId number ID of next outgoing data packet
 ---@field private __lastPacket nil|table Last send data packet
 ---@field private __packetQueueOut Queue Queue of pending outgoing data packets
@@ -144,6 +145,9 @@ function NetSocket:_onPacket(packet)
     self.__lastRemoteId = packet.id
     self.__dataQueueIn:enqueue(packet.data)
     os.queueEvent(NetSocket.ON_PACKET_EVENT, self)
+    if self.onPacketCallback then
+        self.onPacketCallback(packet)
+    end
 end
 
 ---Open the socket. Must be called before trying to send data.

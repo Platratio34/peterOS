@@ -17,6 +17,7 @@ elseif args[1] == 'ip' then
 elseif args[1] == 'help' then
     print("net update - Update the net package")
     print("net ip - Get current IP address")
+    return
 end
 
 print('Unknown operation')
