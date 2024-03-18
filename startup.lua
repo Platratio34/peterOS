@@ -48,6 +48,7 @@ local appdataPath = "/home/.appdata"
 local su = false
 
 local version = ""
+local versionId = ""
 
 ---OS Log
 local log = pos.Logger('log.log', false, true)
@@ -343,6 +344,21 @@ function pos.version()
     version = vf.readLine()
     vf.close()
     return version
+end
+
+---Get the current POS version ID (`vX.X` or `vX.X-dev`)
+---@return string versionId
+function pos.versionId()
+    if versionId ~= nil then
+        return versionId
+    end
+    local v = pos.version()
+    local s, e = v:find('V%d+%.%d+%-?[Dd]?e?v?')
+    if not s then return
+        ""
+    end
+    versionId = v:sub(s, e):lower()
+    return versionId
 end
 
 ---Set the super user password

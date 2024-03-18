@@ -14,6 +14,9 @@ elseif args[1] == 'ip' then
     end
     print('Unknown IP format')
     return
+elseif args[1] == 'help' then
+    print("net update - Update the net package")
+    print("net ip - Get current IP address")
 end
 
 print('Unknown operation')
