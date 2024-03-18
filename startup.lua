@@ -349,14 +349,12 @@ end
 ---Get the current POS version ID (`vX.X` or `vX.X-dev`)
 ---@return string versionId
 function pos.versionId()
-    if versionId ~= nil then
+    if versionId ~= "" then
         return versionId
     end
     local v = pos.version()
     local s, e = v:find('V%d+%.%d+%-?[Dd]?e?v?')
-    if not s then return
-        ""
-    end
+    if s == nil then return "" end
     versionId = v:sub(s, e):lower()
     return versionId
 end
