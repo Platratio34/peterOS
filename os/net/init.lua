@@ -902,7 +902,7 @@ net.sendSync = function(port, dest, msgType, body, timeout)
     expect(1, port, "number")
     expect(2, dest, "number", "string")
     expect(3, msgType, "string")
-    expect(4, timeout, "nil", "number")
+    expect(5, timeout, "nil", "number")
 
     if not net.setup() then
         return "setup_fail"
@@ -964,7 +964,7 @@ net.sendAdvSync = function(port, dest, head, body, timeout)
     expect(1, port, "number")
     expect(2, dest, "number", "string")
     expect(3, head, "table")
-    expect(4, timeout, "nil", "number")
+    expect(5, timeout, "nil", "number")
 
     if not net.setup() then
         return "setup_fail"

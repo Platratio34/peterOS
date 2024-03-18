@@ -171,6 +171,7 @@ function NetSocket:open()
         elseif event[1] == "timer" and event[2] == self.__timer then
             if self.__waiting then
                 if self.__tries > NetSocket.MAX_TRIES then
+                    self.__waiting = false
                     self:close()
                     error("SocketError: Too many retries for socket, closing", 0)
                     return
