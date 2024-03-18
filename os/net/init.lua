@@ -149,19 +149,20 @@ local msgHandlerCID = 1;
 ---Run event handlers for valid message
 ---@param msg NetMessage
 local function onMsg(msg)
-    for id, handler in pairs(msgHandlers) do
-        -- print('running msg handler '..id)
-        local suc, error = pcall(handler, msg)
-        -- handler(msg)
-        if not suc then
-            log:warn('NET Handler Error: ' .. error)
-            printError('NET Handler Error: ' .. error)
-        end
-    end
     if isSubscribedTo(msg.dest) then
         for id, handler in pairs(multicastSubscriptions[msg.dest]) do
             ---@cast handler fun(ip: number, msg: NetMessage)
             local suc, error = pcall(handler, msg.dest --[[@as number]], msg)
+            -- handler(msg)
+            if not suc then
+                log:warn('NET Handler Error: ' .. error)
+                printError('NET Handler Error: ' .. error)
+            end
+        end
+    else
+        for id, handler in pairs(msgHandlers) do
+            -- print('running msg handler '..id)
+            local suc, error = pcall(handler, msg)
             -- handler(msg)
             if not suc then
                 log:warn('NET Handler Error: ' .. error)
