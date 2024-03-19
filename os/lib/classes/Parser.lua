@@ -1,5 +1,5 @@
 ---@class Parser Command line parser utility
----@field flags table<string,CLFlag> Table of command line flags
+---@field flags {string: CLFlag} Table of known command line flags
 local Parser = {
     flags = {}
 }
@@ -12,21 +12,25 @@ function pos.Parser()
     return o
 end
 
+---Parse command line arguments. Pulls out flags and values, and respects quotation marks
+---@param args string[] Command line arguments
+---@return string[] arguments Arguments without flags
+---@return {string: any} flags Table of flags found
 function Parser:parse(args)
-    local cFlags = {}
-    local cArgs = {}
+    local cFlags = {} ---@type {string: any}
+    local cArgs = {} ---@type string[]
 
     local temp = nil
 
     for _,arg in pairs(args) do
         if temp then
-            if arg:sub(-1) == '"' then
+            if arg:ends('"') then
                 table.insert(cArgs,temp..arg:sub(1,-2))
                 temp = nil
             else
                 temp = temp .. arg
             end
-        elseif arg:sub(1, 1) == '-' then
+        elseif arg:start('-') then
             local name = arg:sub(2)
             local val = true ---@type any
             if arg:cont('=') then
@@ -45,7 +49,7 @@ function Parser:parse(args)
                 name = self.flags[name].name
             end
             cFlags[name] = val
-        elseif arg:sub(1,1) == '"' then
+        elseif arg:start('"') then
             temp = arg:sub(2)
         else
             table.insert(cArgs,arg)
@@ -55,15 +59,20 @@ function Parser:parse(args)
     return cArgs, cFlags
 end
 
+---Add a flag to the parser
+---@param name string Flag name
+---@param short? string Short name for flag
 function Parser:addFlag(name, short)
     local flag = {
         name = name,
         short = short
     }
     self.flags[name] = flag
-    self.flags[short] = flag
+    if short then
+        self.flags[short] = flag
+    end
 end
 
 ---@class CLFlag
----@field name string
----@field short nil|string
+---@field name string Flag full name
+---@field short string? *(Optional)* Flag short name
