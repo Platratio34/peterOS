@@ -295,6 +295,9 @@ local users = {}
 
 local LocalUser = loadfile('/os/user/LocalUser.lua')(osFs.open, log, require)
 
+---Get user data by username
+---@param user string Username
+---@return LocalUser? user
 local function getUserData(user)
     expect(1, user, "string")
 
@@ -377,6 +380,9 @@ end
 
 local cUser = nil
 
+---Check if the current user has the specified permission
+---@param perm string Permission to check for
+---@return boolean has
 function user.hasPerm(perm)
     if su then
         return true
@@ -387,6 +393,10 @@ function user.hasPerm(perm)
     return cUser:hasPerm(perm)
 end
 
+---Change the current user
+---@param name string New username
+---@param pass string New user password
+---@return boolean changed
 function user.changeUser(name, pass)
     if name == '' then
         cUser = nil
@@ -402,9 +412,14 @@ function user.changeUser(name, pass)
     return false
 end
 
+---Get the current user name. **DOES NOT GET SUPER USER**
+---@return string user
 function user.getUser()
+    if su then
+        return "super"
+    end
     if not cUser then
-        return nil
+        return ""
     end
     return cUser.name
 end
