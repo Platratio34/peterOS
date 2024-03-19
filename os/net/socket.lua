@@ -8,7 +8,7 @@
 ---@field port number Networking port for socket
 ---@field onPacketCallback fun(packet: NetSocket.Packet)|nil On packet callback function
 ---@field private __nextPacketId number ID of next outgoing data packet
----@field private __lastPacket nil|table Last send data packet
+---@field private __lastPacket nil|NetSocket.Packet Last send data packet
 ---@field private __packetQueueOut Queue Queue of pending outgoing data packets
 ---@field private __dataQueueIn Queue Incoming packet buffer
 ---@field private __waiting boolean If the socket is waiting on a confirmation for the last data packet
@@ -58,6 +58,7 @@ sockets.NetSocketType = NetSocket.TYPE ---Message type for net sockets: `socket`
 ---**Internal** Initialize the socket
 ---@param remote NetAddress address of the other end of the socket
 ---@param port number port for the socket
+---@private
 function NetSocket:__init__(remote, port)
     self.remote = remote
     self.port = port or net.standardPorts.network
@@ -89,6 +90,7 @@ end
 
 ---**Internal** Send a data packet to the remote, resetting last packet and timer
 ---@param packet NetSocket.Packet data packet to send
+---@protected
 function NetSocket:_sendDataPacket(packet)
     self.__lastPacket = packet
     self:_sendPacket(packet)
@@ -100,6 +102,7 @@ end
 
 ---**Internal** Send a generic packet to the remote
 ---@param packet NetSocket.Packet packet to send
+---@protected
 function NetSocket:_sendPacket(packet)
     local r = net.sendAdv(self.port, self.__remoteAddr, {
         type = NetSocket.TYPE,
@@ -112,6 +115,7 @@ end
 
 ---**Internal** Processes an incoming packet
 ---@param packet NetSocket.Packet packet to process
+---@protected
 function NetSocket:_onPacket(packet)
     self.connected = true
     if packet.id == -1 then
@@ -204,7 +208,7 @@ function NetSocket:close()
 end
 
 ---Check if the socket has any data waiting to be pulled from it
----@return boolean
+---@return boolean has
 function NetSocket:hasData()
     return self.__dataQueueIn:size() > 0
 end

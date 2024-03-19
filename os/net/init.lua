@@ -360,7 +360,7 @@ end
 ---Timeout <= 0 disables timeout.
 ---Check function takes the port and message.
 ---Returns the message, or "timeout"
----@param check function Check function, takes port and message
+---@param check fun(port: number, msg: NetMessage): boolean Check function, takes port and message
 ---@param time nil|number Timeout time in seconds, Default is net.DEFAULT_TIMEOUT
 ---@return table|string rsp Message or error string
 local function waitForMsg(check, time)
@@ -605,6 +605,7 @@ local function eventHandler(event)
         elseif msg.dest == -1 or msg.dest == 0xffffffff then
             logVerboseMessage('recv: ' .. net.stringMessage(msg))
             -- print("Broadcast MSG from "..net.ipFormat(msg.origin).." of type '"..msg.header.type.."'")
+
             function msg:reply(p, head, body)
                 net.reply(p, self, head, body)
             end
@@ -1135,7 +1136,7 @@ end
 
 ---Subscribe to a multicast group. IP must be between `224.0.0.0` (`0xe0000000`) and `239.255.255.255` (`0xefffffff`).
 ---@param ip number Multicast group IP
----@param handler fun(ip: number, msg: NetMessage)
+---@param handler fun(ip: number, msg: NetMessage) Multicast message handler
 ---@return integer id Handler Id, used to unregister subscriber
 function net.multicastSubscribe(ip, handler)
     if ip < 0xe0000000 or ip > 0xefffffff then
@@ -1289,7 +1290,7 @@ shell.run("/os/net/socket.lua")
 ---@field header NetMessage.Header Header table
 ---@field body nil|table|string Message body
 ---@field msgid number Message ID
----@field reply function Reply to this message
+---@field reply fun(self, port: number, head: NetMessage.Header, body: nil|table|string) Reply to this message
 
 ---@class NetMessage.Header Networking message header table
 ---@field type string Net message type
