@@ -40,13 +40,13 @@ local sockets = {
 net.sockets = sockets
 
 ---Instantiate a new network socket
----@param remote NetAddress address of the other end of the socket
----@param port number port for the socket
+---@param remote NetAddress Address of the other end of the socket
+---@param port? number *(Optional)* Port for the socket (Defaults to `net.standardPorts.network`)
 ---@return NetSocket socket
 ---@nodiscard
 local function instantiate(remote, port)
     local o = {}
-    setmetatable(o, NetSocketMT)
+    setmetatable(o, NetSocketMT) ---@cast o NetSocket
     o:__init__(remote, port)
     o.id = nextId
     nextId = nextId + 1
@@ -56,9 +56,9 @@ sockets.NetSocket = instantiate
 sockets.NetSocketType = NetSocket.TYPE ---Message type for net sockets: `socket`
 
 ---**Internal** Initialize the socket
----@param remote NetAddress address of the other end of the socket
----@param port number port for the socket
----@private
+---@param remote NetAddress Address of the other end of the socket
+---@param port? number *(Optional)* Port for the socket (Defaults to `net.standardPorts.network`)
+---@package
 function NetSocket:__init__(remote, port)
     self.remote = remote
     self.port = port or net.standardPorts.network
@@ -214,8 +214,8 @@ function NetSocket:hasData()
 end
 
 ---Get the next packet's data if present, else returns nil
----@param time nil|number wait time for next packet, leave nil to not wait
----@return any|nil data next packet from socket or nil if no more packets left
+---@param time? number wait time for next packet, leave nil to not wait
+---@return any? data next packet from socket or `nil` if no more packets left
 function NetSocket:poll(time)
     if self:hasData() then
         return self.__dataQueueIn:dequeue()

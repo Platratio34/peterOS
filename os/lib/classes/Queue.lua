@@ -13,14 +13,14 @@ local QueueMT = {
 ---@return Queue queue
 local function instantiate()
     local o = {}
-    setmetatable(o, QueueMT)
+    setmetatable(o, QueueMT) ---@cast o Queue
     o:__init__()
     return o
 end
 _G.pos.Queue = instantiate
 
 ---**Internal** initialize the queue
----@private
+---@package
 function Queue:__init__()
     self.__arr = {}
     self.__first = 0

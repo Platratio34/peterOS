@@ -207,7 +207,7 @@ end
 ---@param dest NetAddress|string Destination name or IP address
 ---@param head NetMessage.Header Message header, must have type parameter
 ---@param body any Message body
----@param id number|nil Outgoing message ID (optional)
+---@param id? number Outgoing message ID (optional)
 ---@return number id message ID or -1 on failure
 local function sendMsg(port, dest, head, body, id)
     expect(1, port, "number")
@@ -361,7 +361,7 @@ end
 ---Check function takes the port and message.
 ---Returns the message, or "timeout"
 ---@param check fun(port: number, msg: NetMessage): boolean Check function, takes port and message
----@param time nil|number Timeout time in seconds, Default is net.DEFAULT_TIMEOUT
+---@param time? number Timeout time in seconds, Default is net.DEFAULT_TIMEOUT
 ---@return table|string rsp Message or error string
 local function waitForMsg(check, time)
     expect(1, check, "function")
@@ -805,8 +805,8 @@ net.getCModem = function()
 end
 
 ---Setup the network module, returns false on a failure
----@param mdm table|nil Primary modem (optional)
----@param ip number|nil Numeric IP address (optional)
+---@param mdm? table Primary modem (optional)
+---@param ip? number Numeric IP address (optional)
 ---@return boolean setup If the module is not setup
 net.setup = function(mdm, ip)
     expect(1, mdm, "table", "nil")
@@ -922,7 +922,7 @@ end
 ---@param dest NetAddress|string Destination IP address, HW address, or hostname
 ---@param msgType string Message type
 ---@param body any Message body
----@param timeout nil|number Reply timeout in seconds (default is 2 seconds, set to -1 to disable)
+---@param timeout? number Reply timeout in seconds (default is 2 seconds, set to -1 to disable)
 ---@return NetMessage|string rsp Response message, or error string
 net.sendSync = function(port, dest, msgType, body, timeout)
     expect(1, port, "number")
@@ -984,7 +984,7 @@ end
 ---@param dest NetAddress|string Destination IP address, HW address, or hostname
 ---@param head NetMessage.Header Message header, should include type parameter
 ---@param body any Message body
----@param timeout nil|number Reply timeout in seconds (default is 2 seconds, set to -1 to disable)
+---@param timeout? number Reply timeout in seconds (default is 2 seconds, set to -1 to disable)
 ---@return NetMessage|string rsp Response message, or error string
 net.sendAdvSync = function(port, dest, head, body, timeout)
     expect(1, port, "number")
@@ -1046,13 +1046,13 @@ end
 -- | Wait functions |
 -- +----------------+
 
----Waits for a message on a particular port, with a timeout. Default timeout is 2 seconds.
----@param port number Network port to listen on (-1 for any)
----@param time number Timeout in seconds
+---Waits for a message on a particular port, with a timeout.
+---@param port number Network port to listen on (`-1` for any)
+---@param time? number *(Optional)* Timeout in seconds (default is `net.DEFAULT_TIMEOUT` seconds, set to `-1` to disable)
 ---@return string|NetMessage rsp Message or error string
 net.waitForMsg = function(port, time)
     expect(1, port, "number")
-    expect(2, time, "number")
+    expect(2, time, "number", "nil")
 
     if not net.setup() then
         return "setup_fail"
@@ -1065,10 +1065,10 @@ net.waitForMsg = function(port, time)
     end, time)
 end
 
----Waits for a message on a particular port, with a timeout. Default timeout is 2 seconds.
+---Waits for a message on a particular port, with a timeout.
 ---Check function should return true on the message you want, and takes the message as a parameter.
----@param port number Network port to listen on (-1 for any)
----@param time number Timeout in seconds
+---@param port number Network port to listen on (`-1` for any)
+---@param time number Timeout in seconds (set to `-1` to disable)
 ---@param check fun(msg: NetMessage): boolean Message check function, takes message as parameter, and returns continue waiting
 ---@return string|NetMessage rsp Message or error string
 net.waitForMsgAdv = function(port, time, check)

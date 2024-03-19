@@ -16,8 +16,8 @@ local Config = {
 ---Creates a config object
 ---@constructor Config
 ---@param path string Path to config file
----@param default table|nil Optional. Default config values
----@param createDef boolean|nil Optional. If the file does not exist, create default config
+---@param default? table Optional. Default config values
+---@param createDef? boolean Optional. If the file does not exist, create default config
 ---@return Config config
 function pos.Config(path, default, createDef)
     local o = {}
@@ -26,10 +26,11 @@ function pos.Config(path, default, createDef)
     return o
 end
 
----Initilize the config object
+---Initialize the config object
 ---@param path string Path to config file
 ---@param default table Default config values
----@param createDef boolean Optional. If the file does not exist, create default config
+---@param createDef? boolean Optional. If the file does not exist, create default config
+---@package
 function Config:__init__(path, default, createDef)
     self.path = path
     self.default = default
@@ -39,7 +40,7 @@ function Config:__init__(path, default, createDef)
 end
 
 ---Load the config from file
----@param path nil|string Optional. Temporary path to load config from
+---@param path? string Optional. Temporary path to load config from
 ---@return boolean loaded
 function Config:load(path)
     self.loaded = false
@@ -60,7 +61,7 @@ function Config:load(path)
 end
 
 ---Load the config from file, or create a default one at the path
----@param path nil|string Optional. Temporary path to load config from
+---@param path? string Optional. Temporary path to load config from
 ---@return boolean loaded
 function Config:loadOrDef(path)
     path = path or self.path
@@ -77,7 +78,7 @@ function Config:loadOrDef(path)
 end
 
 ---Saves the config to file
----@param path nil|string Optional. Temporary path to save config to
+---@param path? string Optional. Temporary path to save config to
 ---@return boolean saved
 function Config:save(path)
     path = path or self.path
@@ -95,7 +96,7 @@ function Config:save(path)
 end
 
 ---Saves the config, including default values, to file
----@param path nil|string Optional. Temporary path to save config to
+---@param path? string Optional. Temporary path to save config to
 ---@return boolean saved
 function Config:saveAll(path)
     path = path or self.path
