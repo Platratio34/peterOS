@@ -1,8 +1,8 @@
 ---@class LocalUser pOS User object
----@field perm nil|{str:boolean} FILE ONLY permission dictionary
----@field protected _perm {str:boolean} User permissions
+---@field perm nil|{string: boolean} **FILE ONLY** permission dictionary
+---@field protected _perm {string: boolean} User permissions
 ---@field name string User name
----@field pasH string Password hash (SHA-256)
+---@field pasH string Hashed password (SHA-256)
 local LocalUser = {
     perm = {},
     _perm = {}
@@ -15,10 +15,10 @@ local sha256 = require("hash.sha256")
 
 ---Create a new LocalUser with name, password, and permissions
 ---@constructor LocalUser
----@param name string
----@param pass string
----@param perm string|table
----@return nil
+---@param name string Username
+---@param pass string Plain-text password
+---@param perm string|table Permissions (if string, placed in table)
+---@return LocalUser?
 function LocalUserMT.__call(name, pass, perm)
     if fs.exists(name .. '.userDat') then
         osLog:warn('Tried to create a new user "' .. name .. '", but it already existed')
@@ -45,9 +45,10 @@ function LocalUserMT.__call(name, pass, perm)
 end
 
 ---Initialize a new LocalUser
----@param name string username
----@param pass string password
----@param perm {str: boolean} permission tree
+---@param name string Username
+---@param pass string Plain-text password
+---@param perm {string: boolean} Permission tree
+---@package
 function LocalUser:__init__(name, pass, perm)
     self.name = name
     self.pasH = sha256.hash(pass)
@@ -55,8 +56,8 @@ function LocalUser:__init__(name, pass, perm)
 end
 
 ---Create a new User from file
----@param name string username
----@return LocalUser|nil user Nil if user could not be loaded
+---@param name string Username
+---@return LocalUser? user
 function LocalUser.fromFile(name)
     if not fs.exists(name .. '.userDat') then
         return nil
@@ -106,7 +107,7 @@ function LocalUser:save()
 end
 
 ---Check if user has permission node, or parent
----@param perm string permission node
+---@param perm string Permission node
 ---@return boolean hasPerm
 function LocalUser:hasPerm(perm)
     if self._perm[perm] ~= nil then
@@ -127,30 +128,30 @@ function LocalUser:hasPerm(perm)
     return false
 end
 
----Set permission node for server
----@param perm string permission node
----@param value boolean|nil permission status. true for has, false for block, nil to unset
+---Set permission node for user
+---@param perm string Permission node
+---@param value true|false|nil Permission status. `true` for has, `false` for block, `nil` to unset
 ---@return boolean saved If the change could be saved
 function LocalUser:setPerm(perm, value)
     self._perm[perm] = value
     return self:save()
 end
 
----Get user's home directory: <code>/home/username/</code>
+---Get user's home directory: `/home/username/`
 ---@return string homeDir
 function LocalUser:getHomeDir()
     return '/home/' .. self.name .. '/'
 end
 
 ---Check password
----@param pass string password to check
+---@param pass string Password to check
 ---@return boolean valid
 function LocalUser:checkPass(pass)
     return self.pswH == sha256.hash(pass)
 end
 ---Set the user's password
----@param oldPass string current password
----@param newPass string new password
+---@param oldPass string Current password
+---@param newPass string New password
 ---@return boolean set
 function LocalUser:setPass(oldPass, newPass)
     if self.pswH == sha256.hash(oldPass) then

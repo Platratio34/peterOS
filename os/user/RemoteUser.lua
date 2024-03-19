@@ -9,7 +9,12 @@ local RemoteUserMT = {
 local fsOpen, osLog, LocalUser = table.unpack({ ... })
 local sha256 = require("hash.sha256")
 
-setmetatable(RemoteUserMT, {__index = LocalUser})
+setmetatable(RemoteUserMT, { __index = LocalUser })
+---Create a new RemoteUser, returns `nil` on failure to authenticate with remote
+---@param server string|NetAddress Remote server for authentication
+---@param userName string Remote username
+---@param pass string Password
+---@return RemoteUser?
 function RemoteUserMT.__call(server, userName, pass)
     local msg = net.sendAdvSync(net.standardPorts.remoteUser, server, {
         type = 'tryLogin',
