@@ -20,6 +20,7 @@ end
 _G.pos.Queue = instantiate
 
 ---**Internal** initialize the queue
+---@private
 function Queue:__init__()
     self.__arr = {}
     self.__first = 0
