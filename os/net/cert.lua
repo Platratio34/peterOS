@@ -111,10 +111,13 @@ function certificate.check(cert)
     return valid
 end
 
----Get public encryption key for origin from certificate or cache
----@param msg NetMessage message 
----@return byteArray? key Public encryption key OR `nil` if certificate could not be found or verified
+---Get public encryption key for origin from certificate, cache, or header.
+---@param msg NetMessage Message 
+---@return byteArray? key Public encryption key **OR** `nil` if provided certificate could not be verified
 function certificate.getKey(msg)
+    if not certificate.available then
+        return msg.header.publicKey
+    end
     if msg.header.certificate then
         local cert = msg.header.certificate ---@cast cert net.Certificate
         if cache[cert.id] then
@@ -125,14 +128,14 @@ function certificate.getKey(msg)
             return nil
         end
     elseif msg.header.originDomain then
-        for id, cert in pairs(cache) do
+        for _, cert in pairs(cache) do
             if cert.origin == msg.msg.header.originDomain then
                 return cert.key
             end
         end
-        return nil
+        return msg.header.publicKey
     else
-        return nil
+        return msg.header.publicKey
     end
 end
 

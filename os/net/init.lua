@@ -459,7 +459,7 @@ local function waitForMsg(check, time)
     return 'How did we get here?'
 end
 
---- If messages that can not be decrypted should be ignored
+--- If messages that can not be decrypted should be ignored. Defaults to `true`
 net.ignoreMsgOnDecryptFail = true
 local processedMessages = {}
 local waitingForAccept = false
@@ -513,6 +513,7 @@ local function eventHandler(event)
             end
 
             if msg.header.encrypted then
+                local oPK = net.certificate.getKey(msg)
                 if not msg.body then
                     log:warn('Received message marked as encrypted from ' ..
                         net.ipFormat(msg.origin) .. ', but did not have body (msgid=' .. msg.msgid .. ')')
@@ -522,9 +523,11 @@ local function eventHandler(event)
                 elseif not msg.body.sig then
                     log:warn('Received message marked as encrypted from ' ..
                         net.ipFormat(msg.origin) .. ', but did not have signature in body (msgid=' .. msg.msgid .. ')')
+                elseif not oPK then
+                    log:warn('Received message marked as encrypted from ' ..
+                        net.ipFormat(msg.origin) .. ', but could not validate key (msgid=' .. msg.msgid .. ')')
                 else
-                    local suc, body = net.encrypt.decrypt(msg.body.cipher, msg.body.sig,
-                        msg.header.publicKey)
+                    local suc, body = net.encrypt.decrypt(msg.body.cipher, msg.body.sig, oPK)
                     if suc then
                         if not body then
                             log:warn('Failed to decrypt msg from ' ..
