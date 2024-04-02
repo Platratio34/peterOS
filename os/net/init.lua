@@ -1280,6 +1280,7 @@ end
 
 shell.setAlias('net', '/os/net/cmd.lua')
 shell.run("/os/net/socket.lua")
+loadfile('/os/net/cert.lua')(require, log)
 
 ---@alias NetAddress number|string IP or HW address
 
@@ -1300,3 +1301,4 @@ shell.run("/os/net/socket.lua")
 ---@field conId number|nil NAT connection ID
 ---@field destConId number|nil Destination NAT connection ID
 ---@field originDomain string|nil (REPLY ONLY) Domain the request was sent to
+---@field certificate net.Certificate?

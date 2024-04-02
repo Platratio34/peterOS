@@ -49,6 +49,7 @@
         "os/net/netUpdate.lua",
         "os/net/cmd.lua",
         "os/net/socket.lua",
+        "os/net/cert.lua",
         
         "os/net/rttp/init.lua",
         "os/net/rttp/simpleServer.lua",
