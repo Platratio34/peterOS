@@ -147,7 +147,7 @@ end
 
 ---Copy a certificate
 ---@param cert net.Certificate
----@return net.Certificate
+---@return net.Certificate copy
 function certificate.copy(cert)
     return {
         id = cert.id,
