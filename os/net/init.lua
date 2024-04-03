@@ -1297,4 +1297,4 @@ loadfile('/os/net/cert.lua')(require, log)
 ---@field conId number|nil NAT connection ID
 ---@field destConId number|nil Destination NAT connection ID
 ---@field originDomain string|nil (REPLY ONLY) Domain the request was sent to
----@field certificate net.Certificate?
+---@field certificate net.Certificate? Certificate
