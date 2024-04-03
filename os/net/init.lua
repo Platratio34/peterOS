@@ -489,31 +489,27 @@ local function eventHandler(event)
         processedMessages[origin .. msg.msgid] = true
 
         if msg.header.publicKey then
+            local oPK = net.certificate.getKey(msg)
             -- log:debug('Received message w/ public key')
 
-            if not remoteKeys[origin] then
-                remoteKeys[origin] = msg.header.publicKey
-            else
-                local eq = true
-                for i, v in pairs(remoteKeys[origin]) do
-                    if msg.header.publicKey[i] ~= v then
-                        eq = false
-                        break
-                    end
-                end
-                if not eq then
-                    log:warn('Received message from ' .. origin .. ' but public key does to match cached version')
-                    log:debug(textutils.serialiseJSON(remoteKeys[origin]))
-                    log:debug('vs')
-                    log:debug(textutils.serialiseJSON(msg.header.publicKey))
+            if not oPK then
+                log:warn('Received message marked as encrypted from ' ..
+                    net.ipFormat(msg.origin) .. ', but could not validate key (msgid=' .. msg.msgid .. ')')
+                return
+            end
 
-                    -- prevent bad version of message from getting through
-                    return
-                end
+            if not remoteKeys[origin] then
+                remoteKeys[origin] = oPK
+            elseif not net.encrypt.keyMatch(oPK, remoteKeys[origin]) then
+                log:warn('Received message from ' .. origin .. ' but public key does to match cached version')
+                log:debug(textutils.serialiseJSON(remoteKeys[origin]))
+                log:debug('vs')
+                log:debug(textutils.serialiseJSON(oPK))
+                -- prevent bad version of message from getting through
+                return
             end
 
             if msg.header.encrypted then
-                local oPK = net.certificate.getKey(msg)
                 if not msg.body then
                     log:warn('Received message marked as encrypted from ' ..
                         net.ipFormat(msg.origin) .. ', but did not have body (msgid=' .. msg.msgid .. ')')
@@ -523,9 +519,6 @@ local function eventHandler(event)
                 elseif not msg.body.sig then
                     log:warn('Received message marked as encrypted from ' ..
                         net.ipFormat(msg.origin) .. ', but did not have signature in body (msgid=' .. msg.msgid .. ')')
-                elseif not oPK then
-                    log:warn('Received message marked as encrypted from ' ..
-                        net.ipFormat(msg.origin) .. ', but could not validate key (msgid=' .. msg.msgid .. ')')
                 else
                     local suc, body = net.encrypt.decrypt(msg.body.cipher, msg.body.sig, oPK)
                     if suc then

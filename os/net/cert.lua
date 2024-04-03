@@ -6,7 +6,7 @@ local ecc = pos.require("ecc")
 local certificate = {}
 _G.net.certificate = certificate
 
-certificate.available = false
+certificate.available = false ---If the certificate module is available, `false` if CCA certificate could not be loaded
 
 ---@diagnostic disable-next-line: missing-fields
 local ccaCert = {} ---@type net.Certificate
@@ -168,7 +168,7 @@ end
 
 ---@class net.Certificate
 ---@field id string Node ID
----@field origin string? Origin name (hostname)
+---@field origin string? Origin name (domain)
 ---@field key byteArray Node encryption public key
 ---@field canSign boolean? If this node may sign for others
 ---@field signer string Signer's Node ID
