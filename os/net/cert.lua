@@ -12,10 +12,11 @@ certificate.available = false ---If the certificate module is available, `false`
 local ccaCert = {} ---@type net.Certificate
 local ccaFilePath = "/os/net/cca.cert"
 
-local cache = {} ---@type {string: net.Certificate}
+local cache = {} ---@type {string: net.Certificate} Table of NodeID to Certificate
 local cacheFilePath = "/home/.appdata/net/certificate.cache"
+local cacheByOrigin = {} ---@type {string: net.Certificate} Table of origin to Certificate
 
----Initialize the certificate module (run in net init)
+---Initialize the certificate module (ran in net init)
 ---@return boolean available
 function certificate.init()
     if certificate.available then return true end
@@ -44,6 +45,11 @@ function certificate.init()
             if not cache then
                 netLog:error('Certificate cache corrupted')
             end
+            for _, cert in pairs(cache) do
+                if cache.origin then
+                    cacheByOrigin[cache.origin] = cert
+                end
+            end
         end
     end
     certificate.available = true
@@ -66,8 +72,7 @@ function certificate.check(cert)
                 if not net.encrypt.keyMatch(cacheCert[k], v) then
                     return false
                 end
-            end
-            if cacheCert[k] ~= v then
+            elseif cacheCert[k] ~= v then
                 return false
             end
         end
@@ -106,6 +111,9 @@ function certificate.check(cert)
 
     if valid then
         cache[cert.id] = certificate.copy(cert)
+        if cache.origin then
+            cacheByOrigin[cache.origin] = cert
+        end
         certificate.saveCache()
     end
     return valid
@@ -128,10 +136,8 @@ function certificate.getKey(msg)
             return nil
         end
     elseif msg.header.originDomain then
-        for _, cert in pairs(cache) do
-            if cert.origin == msg.msg.header.originDomain then
-                return cert.key
-            end
+        if cacheByOrigin[msg.msg.header.originDomain] then
+            return cacheByOrigin[msg.msg.header.originDomain].key
         end
         return msg.header.publicKey
     else
