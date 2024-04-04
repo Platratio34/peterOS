@@ -63,30 +63,30 @@ function certificate.check(cert)
         return false
     end
 
-    local signerKey = {}
-    if cert.signer == "cca" then
-        signerKey = ccaCert.key
+    local issuerKey = {}
+    if cert.issuer == "cca" then
+        issuerKey = ccaCert.key
     elseif cert.parent then
         if not certificate.check(cert.parent) then
             return false
         end
         if not cert.parent.canSign then
-            if not cert.id:ends('.'..cert.parent.id) then -- not derivate certificate
+            if not cert.id:ends('.'..cert.parent.id) and cert.validUntil <= cert.parent.validUntil and not cert.canSign then -- not derivate certificate
                 return false
             end
         end
-        signerKey = cert.parent.key
-    elseif cache[cert.signer] then
-        local signer = cache[cert.signer]
+        issuerKey = cert.parent.key
+    elseif cache[cert.issuer] then
+        local signer = cache[cert.issuer]
         if signer.validUntil < os.epoch('utc') then
             return false
         end
         if not signer.canSign then
-            if not cert.id:ends('.'..signer.id) then -- not derivate certificate
+            if not cert.id:ends('.'..signer.id) and cert.validUntil <= signer.validUntil and not cert.canSign then -- not derivate certificate
                 return false
             end
         end
-        signerKey = signer.key
+        issuerKey = signer.key
     else
         return false
     end
@@ -96,9 +96,9 @@ function certificate.check(cert)
         origin = cert.origin,
         key = cert.key,
         canSign = cert.canSign,
-        signer = cert.signer
+        signer = cert.issuer
     }
-    local valid = ecc.verify(signerKey, textutils.serialise(o), cert.signature)
+    local valid = ecc.verify(issuerKey, textutils.serialise(o), cert.signature)
 
     if valid then
         local cached = cache[cert.id]
@@ -152,7 +152,7 @@ function certificate.copy(cert)
         key = cert.key,
         canSign = cert.canSign,
         validUntil = cert.validUntil,
-        signer = cert.signer,
+        signer = cert.issuer,
         signature = cert.signature,
     }
 end
@@ -175,8 +175,8 @@ end
 ---@field key byteArray Node encryption public key
 ---@field canSign boolean? If this node may sign for **ANY** others, if absent or false, may only sign for derivatives
 ---@field validUntil number Certificate expiration time in UTC epoch milliseconds (check with `os.epoch('utc')`)
----@field signer string Signer's Node ID
----@field signature byteArray Signature with signer's private key *(NOT SIGNED)*
----@field parent net.Certificate? Signer's certificate *(NOT SIGNED)*
+---@field issuer string Issuer's Node ID
+---@field signature byteArray Signature with issuer's private key *(NOT SIGNED)*
+---@field parent net.Certificate? Issuer's certificate (and parents) *(NOT SIGNED)*
 
 certificate.init()
