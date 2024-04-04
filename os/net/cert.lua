@@ -70,19 +70,20 @@ function certificate.check(cert)
         if not certificate.check(cert.parent) then
             return false
         end
-        if not cert.parent.canSign then
-            if not cert.id:ends('.'..cert.parent.id) and cert.validUntil <= cert.parent.validUntil and not cert.canSign then -- not derivate certificate
+        if cert.validUntil <= cert.parent.validUntil then -- Can not issue certificate valid after parent
+            return false
+        elseif not cert.parent.canSign then
+            if not cert.id:ends('.'..cert.parent.id) and (not cert.canSign) then -- Must have derivative ID, and can not be general certificate issuer
                 return false
             end
         end
         issuerKey = cert.parent.key
     elseif cache[cert.issuer] then
         local signer = cache[cert.issuer]
-        if signer.validUntil < os.epoch('utc') then
+        if cert.validUntil <= signer.validUntil then -- Can not issue certificate valid after parent
             return false
-        end
-        if not signer.canSign then
-            if not cert.id:ends('.'..signer.id) and cert.validUntil <= signer.validUntil and not cert.canSign then -- not derivate certificate
+        elseif not signer.canSign then
+            if not cert.id:ends('.' .. signer.id) and (not cert.canSign) then -- Must have derivative ID, and can not be general certificate issuer
                 return false
             end
         end
