@@ -14,7 +14,6 @@ local ccaFilePath = "/os/net/cca.cert"
 
 local cache = {} ---@type {string: net.Certificate} Table of NodeID to Certificate
 local cacheFilePath = "/home/.appdata/net/certificate.cache"
-local cacheByOrigin = {} ---@type {string: net.Certificate} Table of origin to Certificate
 
 ---Initialize the certificate module (ran in net init)
 ---@return boolean available
@@ -45,11 +44,6 @@ function certificate.init()
             if not cache then
                 netLog:error('Certificate cache corrupted')
             end
-            for _, cert in pairs(cache) do
-                if cache.origin then
-                    cacheByOrigin[cache.origin] = cert
-                end
-            end
         end
     end
     certificate.available = true
@@ -65,37 +59,34 @@ function certificate.check(cert)
         return false
     end
 
-    if cache[cert.id] then
-        local cacheCert = cache[cert.id]
-        for k, v in pairs(cert) do
-            if type(v) == 'table' then
-                if not net.encrypt.keyMatch(cacheCert[k], v) then
-                    return false
-                end
-            elseif cacheCert[k] ~= v then
-                return false
-            end
-        end
-        return true
+    if cert.validUntil < os.epoch('utc') then
+        return false
     end
 
     local signerKey = {}
     if cert.signer == "cca" then
         signerKey = ccaCert.key
-    elseif cache[cert.signer] then
-        local signer = cache[cert.signer]
-        if not signer.canSign then
-            return false
-        end
-        signerKey = signer.key
     elseif cert.parent then
         if not certificate.check(cert.parent) then
             return false
         end
         if not cert.parent.canSign then
-            return false
+            if not cert.id:ends('.'..cert.parent.id) then -- not derivate certificate
+                return false
+            end
         end
         signerKey = cert.parent.key
+    elseif cache[cert.signer] then
+        local signer = cache[cert.signer]
+        if signer.validUntil < os.epoch('utc') then
+            return false
+        end
+        if not signer.canSign then
+            if not cert.id:ends('.'..signer.id) then -- not derivate certificate
+                return false
+            end
+        end
+        signerKey = signer.key
     else
         return false
     end
@@ -110,11 +101,14 @@ function certificate.check(cert)
     local valid = ecc.verify(signerKey, textutils.serialise(o), cert.signature)
 
     if valid then
-        cache[cert.id] = certificate.copy(cert)
-        if cache.origin then
-            cacheByOrigin[cache.origin] = cert
+        local cached = cache[cert.id]
+        if not cached then
+            cache[cert.id] = certificate.copy(cert)
+            certificate.saveCache()
+        elseif cached.validUntil < cert.validUntil then
+            cache[cert.id] = certificate.copy(cert)
+            certificate.saveCache()
         end
-        certificate.saveCache()
     end
     return valid
 end
@@ -128,16 +122,20 @@ function certificate.getKey(msg)
     end
     if msg.header.certificate then
         local cert = msg.header.certificate ---@cast cert net.Certificate
-        if cache[cert.id] then
-            return cache[cert.id].key
+        if msg.header.originDomain ~= cert.id then
+            return nil
         elseif certificate.check(cert) then
             return cert.key
         else
             return nil
         end
     elseif msg.header.originDomain then
-        if cacheByOrigin[msg.msg.header.originDomain] then
-            return cacheByOrigin[msg.msg.header.originDomain].key
+        if cache[msg.msg.header.originDomain] then
+            local cert = cache[msg.msg.header.originDomain]
+            if cert.validUntil < os.epoch('utc') then
+                return nil
+            end
+            return cert.key
         end
         return msg.header.publicKey
     else
@@ -151,9 +149,9 @@ end
 function certificate.copy(cert)
     return {
         id = cert.id,
-        origin = cert.origin,
         key = cert.key,
         canSign = cert.canSign,
+        validUntil = cert.validUntil,
         signer = cert.signer,
         signature = cert.signature,
     }
@@ -173,10 +171,10 @@ function certificate.saveCache()
 end
 
 ---@class net.Certificate
----@field id string Node ID
----@field origin string? Origin name (domain)
+---@field id string Node ID (domain is applicable)
 ---@field key byteArray Node encryption public key
----@field canSign boolean? If this node may sign for others
+---@field canSign boolean? If this node may sign for **ANY** others, if absent or false, may only sign for derivatives
+---@field validUntil number Certificate expiration time in UTC epoch milliseconds (check with `os.epoch('utc')`)
 ---@field signer string Signer's Node ID
 ---@field signature byteArray Signature with signer's private key *(NOT SIGNED)*
 ---@field parent net.Certificate? Signer's certificate *(NOT SIGNED)*

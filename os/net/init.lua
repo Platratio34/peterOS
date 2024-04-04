@@ -465,6 +465,7 @@ local processedMessages = {}
 local waitingForAccept = false
 -- local osPullEventRaw = os.pullEventRaw
 -- os.pullEventRaw = function(sFilter)
+
 local function eventHandler(event)
     -- print("Got Modem Msg")
     local _, _, port, _, msg, _ = table.unpack(event)
@@ -488,20 +489,33 @@ local function eventHandler(event)
 
         processedMessages[origin .. msg.msgid] = true
 
-        if msg.header.publicKey then
+        if msg.header.publicKey or msg.header.certificate then
             local oPK = net.certificate.getKey(msg)
             -- log:debug('Received message w/ public key')
 
             if not oPK then
-                log:warn('Received message marked as encrypted from ' ..
-                    net.ipFormat(msg.origin) .. ', but could not validate key (msgid=' .. msg.msgid .. ')')
+                if msg.header.certificate then
+                    log:warn('Received message with certificate from ' ..
+                        net.ipFormat(msg.origin) .. ', but could not validate (msgid=' .. msg.msgid .. ')')
+                else
+                    log:warn('Received message marked as encrypted from ' ..
+                        net.ipFormat(msg.origin) .. ', but could not validate key (msgid=' .. msg.msgid .. ')')
+                end
                 return
             end
 
-            if not remoteKeys[origin] then
+            if (msg.header.publicKey and msg.header.certificate) and (not net.encrypt.keyMatch(msg.header.publicKey, oPK)) then
+                log:warn('Received message from ' .. origin .. ' but provided key does to match certificate')
+                log:debug(textutils.serialiseJSON(msg.header.publicKey))
+                log:debug('vs')
+                log:debug(textutils.serialiseJSON(oPK))
+                return
+            end
+
+            if (not remoteKeys[origin]) or msg.header.certificate then
                 remoteKeys[origin] = oPK
             elseif not net.encrypt.keyMatch(oPK, remoteKeys[origin]) then
-                log:warn('Received message from ' .. origin .. ' but public key does to match cached version')
+                log:warn('Received message from ' .. origin .. ' but provided key does to match cached version')
                 log:debug(textutils.serialiseJSON(remoteKeys[origin]))
                 log:debug('vs')
                 log:debug(textutils.serialiseJSON(oPK))
