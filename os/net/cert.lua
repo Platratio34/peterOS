@@ -173,6 +173,7 @@ function certificate.saveCache()
     return true
 end
 
+local alreadyRenewing = {} ---@type {string: boolean}
 ---Add applicable self certificate to outgoing message
 ---@param msg NetMessage
 ---@return NetMessage
@@ -199,8 +200,41 @@ function certificate.addCert(msg)
         netLog:warn('Certificate ' .. cert.id .. ' expired')
         return msg
     elseif cert.validUntil < os.epoch('utc') + (8.64e7) then
-        netLog:warn('Certificate ' .. cert.id .. ' is going to expire within 1 day')
         ---TODO probably should do something to refresh it here?
+        if not alreadyRenewing[cert.id] then
+            netLog:warn('Certificate ' .. cert.id .. ' is going to expire within 1 day')
+            local timer = os.startTimer(1)
+            local timer2 = -1
+            local msgId = -1
+            pos.addEventHandler(function(event, handler)
+                if event[1] == 'timer' and event[2] == timer then
+                    msgId = net.send(net.standardPorts.network, cert.issuer, 'certRenew', cert)
+                    if msgId == -1 then
+                        netLog:warn("Unable to renew certificate " .. cert.id..': send error')
+                        handler:unregister()
+                    else
+                        timer2 = os.startTimer(10)
+                    end
+                elseif event[1] == 'timer' and event[2] == timer2 then
+                    netLog:warn("Unable to renew certificate " .. cert.id .. ': timeout')
+                    handler:unregister()
+                elseif event[1] == 'net_message' then
+                    local m = event[2] ---@type NetMessage
+                    if m.port ~= net.standardPorts.network or m.msgid ~= msgId or m.header.type ~= 'certRenew' then
+                        return
+                    end
+                    handler:unregister()
+                    local f = fs.open(certPath, 'w')
+                    if not f then
+                        netLog:warn("Unable to renew certificate " .. cert.id .. ': could not write new certificate')
+                        return
+                    end
+                    f.write(textutils.serialiseJSON(m.body))
+                    f.close()
+                    netLog:info("Renewed certificate "..cert.id)
+                end
+            end, {'timer','net_message'}, 'certRenew-'..cert.id)
+        end
     end
     msg.header.certificate = cert
     if msg.header.publicKey and not net.encrypt.keyMatch(msg.header.publicKey, cert.key) then
