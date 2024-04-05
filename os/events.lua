@@ -42,28 +42,30 @@ end
 
 ---@class EventHandler
 ---@field name nil|string Handler name
----@field handler fun(event: table) Handler function, takes event table
+---@field handler fun(event: table, handler: EventHandler) Handler function, takes event table
 ---@field filter nil|string[] Event filter, leave `nil` to handle all events
+---@field private __handlerId number **READ ONLY** POS event handler ID
 local EventHandler = {}
 ---Try to execute the event handler, if filter matchers
 ---@param eType string event type
 ---@param event table event table
 function EventHandler:try(eType, event)
     if self.filter == nil then
-        self.handler(event)
+        self.handler(event, self)
     else
         for _, filter in pairs(self.filter) do
             if filter == eType then
-                self.handler(event)
+                self.handler(event, self)
                 return
             end
         end
     end
 end
 ---Initialize the event handler
----@param handler fun(event: table) Event handler function, takes event table
+---@param handler fun(event: table, handler: EventHandler) Event handler function, takes event table
 ---@param filter nil|string|string[] Event type filter. Leave `nil` for all events
-function EventHandler:__init__(handler, filter)
+---@param id number POS event handler ID
+function EventHandler:__init__(handler, filter, id)
     expect(1, handler, "function")
     expect(2, filter, "nil", 'string', 'table')
     self.handler = handler
@@ -71,10 +73,15 @@ function EventHandler:__init__(handler, filter)
         filter = { filter }
     end
     self.filter = filter
+    self.__handlerId = id
+end
+---Unregister this event handler
+function EventHandler:unregister()
+    pos.removeEventHandler(self.__handlerId)
 end
 
 ---Add an event handler
----@param handler fun(event: table) Event handler function, takes event table
+---@param handler fun(event: table, handler: EventHandler) Event handler function, takes event table
 ---@param filter nil|string|string[] Event type filter. Leave `nil` for all events
 ---@param name nil|string **Optional** handler name
 ---@return integer handlerId Event handler Id, used to remove handler
@@ -83,7 +90,7 @@ function pos.addEventHandler(handler, filter, name)
     expect(2, filter, "nil", 'string', 'table')
     local ehId = eventHandlerId
     eventHandlerId = eventHandlerId + 1
-    local eventHandler = pos.instanceClass(EventHandler, handler, filter)
+    local eventHandler = pos.instanceClass(EventHandler, handler, filter, ehId)
     eventHandler.name = name
     -- setmetatable(eventHandler, { __index = EventHandler })
     -- eventHandler:__init__(handler, filter)
