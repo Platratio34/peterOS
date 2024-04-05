@@ -15,6 +15,8 @@ local ccaFilePath = "/os/net/cca.cert"
 local cache = {} ---@type {string: net.Certificate} Table of NodeID to Certificate
 local cacheFilePath = "/home/.appdata/net/certificate.cache"
 
+local selfCertFilePath = "/home/.appdata/net/"
+
 ---Initialize the certificate module (ran in net init)
 ---@return boolean available
 function certificate.init()
@@ -169,6 +171,42 @@ function certificate.saveCache()
     cacheFile.write(textutils.serialiseJSON(cache))
     cacheFile.close()
     return true
+end
+
+---Add applicable self certificate to outgoing message
+---@param msg NetMessage
+---@return NetMessage
+function certificate.addCert(msg)
+    if not msg.header.originDomain then
+        return msg
+    end
+    local certPath = selfCertFilePath .. msg.header.originDomain .. '.cert'
+    if not fs.exists(certPath) then
+        return msg
+    end
+    local certFile = fs.open(certPath, 'r')
+    if not certFile then
+        netLog:error("Could not open certificate file `" .. certPath .. '`')
+        return msg
+    end
+    local cert = textutils.unserialiseJSON(certFile.readAll()) ---@type net.Certificate?
+    certFile.close()
+    if not cert then
+        netLog:error("Certificate file `" .. certPath .. '` corrupted')
+        return msg
+    end
+    if cert.validUntil < os.epoch('utc') then
+        netLog:warn('Certificate ' .. cert.id .. ' expired')
+        return msg
+    elseif cert.validUntil < os.epoch('utc') + (8.64e7) then
+        netLog:warn('Certificate ' .. cert.id .. ' is going to expire within 1 day')
+        ---TODO probably should do something to refresh it here?
+    end
+    msg.header.certificate = cert
+    if msg.header.publicKey and not net.encrypt.keyMatch(msg.header.publicKey, cert.key) then
+        netLog:warn('Outgoing message with certificate for '..cert.id..': Certificate key does not match public key in header')
+    end
+    return msg
 end
 
 ---@class net.Certificate

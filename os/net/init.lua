@@ -316,6 +316,7 @@ local function sendMsg(port, dest, head, body, id)
         body = body,
         msgid = id,
     }
+    net.certificate.addCert(msg)
     logVerboseMessage('send: ' .. net.stringMessage(msg))
     if ipAddr == 0x0 then
         msg.origin = "hw:" .. hwAddr
