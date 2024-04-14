@@ -183,6 +183,7 @@ function certificate.addCert(msg)
     end
     local certPath = selfCertFilePath .. msg.header.originDomain .. '.cert'
     if not fs.exists(certPath) then
+        netLog:warn('Tried to load self certificate for `'..msg.header.originDomain..'`, could not be found')
         return msg
     end
     local certFile = fs.open(certPath, 'r')
@@ -241,6 +242,61 @@ function certificate.addCert(msg)
         netLog:warn('Outgoing message with certificate for '..cert.id..': Certificate key does not match public key in header')
     end
     return msg
+end
+
+---Make a new certificate. **RETURNS `nil` IF SELF CERTIFICATE CANNOT SIGN FOR REQUESTED**
+---@param id string Requested Node ID
+---@param key byteArray Public key for requested certificate
+---@param canSign boolean If the requested certificate can sign arbitrarily **CAN ONLY BE TRUE SELF CERTIFICATE CAN SIGN ARBITRARILY**
+---@param validUntil number UTC epoch millisecond time for certificate expiration time
+---@param issuer string Issuer self cert Node ID
+---@return net.Certificate|nil newCert **OR** `nil` if certificate could not be created
+function certificate.makeCertificate(id, key, canSign, validUntil, issuer)
+    local certPath = selfCertFilePath .. issuer .. '.cert'
+    if not fs.exists(certPath) then
+        netLog:warn('Tried to load self certificate for `'..issuer..'`, could not be found')
+        return nil
+    end
+    local certFile = fs.open(certPath, 'r')
+    if not certFile then
+        netLog:error("Could not open certificate file `" .. certPath .. '`')
+        return nil
+    end
+    local cert = textutils.unserialiseJSON(certFile.readAll()) ---@type net.Certificate?
+    certFile.close()
+    if not cert then
+        netLog:error("Certificate file `" .. certPath .. '` corrupted')
+        return nil
+    elseif cert.validUntil < os.epoch('utc') then
+        netLog:warn('Certificate ' .. cert.id .. ' expired')
+        return nil
+    end
+    if not cert.canSign then
+        if canSign then
+            netLog:warn(
+            'Tried to sign for invalid new signature; Arbitrary certificate requested, but selected parent can not create')
+            return nil
+        elseif not id:ends('.' .. cert.id) then
+            netLog:warn(
+            'Tried to sign for invalid new signature; Invalid new ID, must be derivative for selected parent')
+            return nil
+        end
+    elseif cert.validUntil < validUntil then
+        netLog:warn('Tried to sign for invalid new signature; Expiration was after selected parent, expiration was moved to parent\'s')
+        validUntil = cert.validUntil
+    end
+    local newCert = {
+        id = id,
+        key = key,
+        canSign = canSign,
+        validUntil = validUntil,
+        issuer = cert.id
+    }
+    newCert.signature = net.encrypt.sign(textutils.serialise(newCert))
+    ---@cast newCert net.Certificate
+
+    newCert.parent = cert
+    return newCert
 end
 
 ---@class net.Certificate

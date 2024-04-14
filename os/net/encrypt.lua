@@ -43,6 +43,17 @@ local function setup()
     log:info('Keypair loaded')
 end
 
+---Sign a body with this computer's private keys
+---@param body any If not type `string` will be converted with `textutils.serialise()`
+---@return byteArray signature
+local function sign(body)
+    setup()
+    if type(body) ~= 'string' then
+        body = textutils.serialise(body)
+    end
+    return ecc.sign(keyset.private, body)
+end
+
 ---Encrypt data
 ---@param data any Data to encrypt
 ---@param public string|byteArray Receiver's public key
@@ -122,5 +133,6 @@ net.encrypt = {
     encrypt = encrypt,
     decrypt = decrypt,
     getPublicKey = getPublicKey,
-    keyMatch = keyMatch
+    keyMatch = keyMatch,
+    sign = sign
 }
