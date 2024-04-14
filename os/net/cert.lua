@@ -224,6 +224,10 @@ function certificate.addCert(msg)
                     if m.port ~= net.standardPorts.network or m.msgid ~= msgId or m.header.type ~= 'certRenew' then
                         return
                     end
+                    if m.header.failed then
+                        netLog:warn("Unable to renew certificate " .. cert.id .. ': issuer replied failed')
+                        return
+                    end 
                     handler:unregister()
                     local f = fs.open(certPath, 'w')
                     if not f then
@@ -254,7 +258,7 @@ end
 function certificate.makeCertificate(id, key, canSign, validUntil, issuer)
     local certPath = selfCertFilePath .. issuer .. '.cert'
     if not fs.exists(certPath) then
-        netLog:warn('Tried to load self certificate for `'..issuer..'`, could not be found')
+        netLog:warn('Tried to load self certificate for `' .. issuer .. '`, could not be found')
         return nil
     end
     local certFile = fs.open(certPath, 'r')
@@ -274,15 +278,16 @@ function certificate.makeCertificate(id, key, canSign, validUntil, issuer)
     if not cert.canSign then
         if canSign then
             netLog:warn(
-            'Tried to sign for invalid new signature; Arbitrary certificate requested, but selected parent can not create')
+                'Tried to sign for invalid new signature; Arbitrary certificate requested, but selected parent can not create')
             return nil
         elseif not id:ends('.' .. cert.id) then
             netLog:warn(
-            'Tried to sign for invalid new signature; Invalid new ID, must be derivative for selected parent')
+                'Tried to sign for invalid new signature; Invalid new ID, must be derivative for selected parent')
             return nil
         end
     elseif cert.validUntil < validUntil then
-        netLog:warn('Tried to sign for invalid new signature; Expiration was after selected parent, expiration was moved to parent\'s')
+        netLog:warn(
+            'Tried to sign for invalid new signature; Expiration was after selected parent, expiration was moved to parent\'s')
         validUntil = cert.validUntil
     end
     local newCert = {
@@ -297,6 +302,56 @@ function certificate.makeCertificate(id, key, canSign, validUntil, issuer)
 
     newCert.parent = cert
     return newCert
+end
+
+---Setup a certificate renewal server based on the selected self certificate
+---@param issuer string Issuing certificate ID for renewals
+---@param period number? Period to renew certificates for in milliseconds. (Defaults to 30 days)
+---@param arbitrary boolean? If it should renew arbitrary certificates
+---@return number handlerId Message handler ID for `net.unregisterMsgHandler()` *OR* -1 if the server could not be started
+function certificate.setupCertServer(issuer, period, arbitrary)
+    period = period or (1000 * 60 * 60 * 24 * 30)
+    arbitrary = arbitrary or false
+
+    local validCerts = {}
+    local validCertPath = selfCertFilePath .. issuer .. '.json'
+    if not fs.exists(validCertPath) then
+        netLog:error('Could not start certificate server for issuer `' .. issuer .. '`: valid list file could not be found')
+        return -1
+    end
+    local validCertFile = fs.open(validCertPath, 'r')
+    if not validCertFile then
+        netLog:error('Could not start certificate server for issuer `' .. issuer .. '`: valid list file could not be opened')
+        return -1
+    end
+    validCerts = textutils.unserialiseJSON(validCertFile.readAll())
+    validCertFile.close()
+    if not validCerts then
+        netLog:error('Could not start certificate server for issuer `' .. issuer .. '`: valid list file was corrupted')
+        return -1
+    end
+    return net.registerMsgHandler(function(msg)
+        if msg.header.domain ~= issuer then
+            return
+        end
+        if msg.port == net.standardPorts.network and msg.type == 'certRenew' then
+            local req = msg.body ---@cast req net.Certificate
+            if not validCerts[req] then
+                msg:reply(net.standardPorts.network, { type = "certRenew", originDomain = issuer, failed = 'true' }, {})
+                return
+            end
+            if (msg.header.certificate.id ~= req.id) or ( req.canSign and not (msg.header.certificate.canSign and arbitrary) ) then
+                msg:reply(net.standardPorts.network, { type = "certRenew", originDomain = issuer, failed = 'true' }, {})
+                return
+            end
+            local newCert = certificate.makeCertificate(req.id, req.key, req.canSign, req.validUntil + period, issuer)
+            if not newCert then
+                msg:reply(net.standardPorts.network, {type="certRenew",originDomain=issuer,failed='true'}, {})
+                return
+            end
+            msg:reply(net.standardPorts.network, {type="certRenew",originDomain=issuer}, newCert)
+        end
+    end)
 end
 
 ---@class net.Certificate
