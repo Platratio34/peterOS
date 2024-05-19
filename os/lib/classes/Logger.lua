@@ -20,7 +20,7 @@ _G.pos.LoggerLevel = LoggerLevel
 ---@field private __errorFile Handle|nil Error file write handle
 local Logger = {
     path = '/home/.pgmLog/',
-    level = LoggerLevel.DEBUG,
+    __level = LoggerLevel.DEBUG,
     file = nil,
     print = false,
     logTime = false,
