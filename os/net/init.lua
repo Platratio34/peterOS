@@ -366,7 +366,7 @@ end
 ---@return table|string rsp Message or error string
 local function waitForMsg(check, time)
     expect(1, check, "function")
-    expect(2, time, "number")
+    expect(2, time, "number", "nil")
 
     time = time or net.DEFAULT_TIMEOUT
     local cont = true
