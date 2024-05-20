@@ -39,6 +39,7 @@ local cfgPath = "/home/.appdata/net.cfg"
 local cfg = {
     hostname = "",
     respondToPing = true,
+    originHostname = nil,
 }
 local config = pos.Config(cfgPath, cfg, true)
 cfg = config.data
@@ -281,6 +282,10 @@ local function sendMsg(port, dest, head, body, id)
     if id == nil or id == -1 then
         msgId = msgId + 1
         id = msgId
+    end
+
+    if cfg.originHostname and not head.originDomain then
+        head.originDomain = cfg.originHostname
     end
     
 
