@@ -51,7 +51,7 @@ local version = ""
 local versionId = ""
 
 ---OS Log
-local log = pos.Logger('log.log', false, true)
+local log = pos.Logger('/pos.log', false, true)
 pos.log = log ---OS log
 if not log then
     error('Could not open OS Log')
