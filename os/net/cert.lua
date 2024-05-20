@@ -133,7 +133,7 @@ function certificate.getKey(msg)
             return nil
         end
     elseif msg.header.originDomain then
-        if cache[msg.msg.header.originDomain] then
+        if cache[msg.header.originDomain] then
             local cert = cache[msg.msg.header.originDomain]
             if cert.validUntil < os.epoch('utc') then
                 return nil
