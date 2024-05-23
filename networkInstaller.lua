@@ -37,9 +37,15 @@ if _G.user and not user.isSu() then
     return
 end
 
+local newVersion = "master"
+if fs.exists('/osBranch') then
+    local f = fs.open('/osBranch', 'r')
+    newVersion = f.readAll();
+    f.close()
+end
+
 local cB = '?cb='..os.epoch('utc') % 60000
 local repoURL = 'https://raw.githubusercontent.com/Platratio34/peterOS/'
-local newVersion = 'master'
 for i,arg in pairs(args) do
     if arg == '-v' then
         if #args < i + 1 then
@@ -224,6 +230,10 @@ if os.getComputerLabel() == nil then
     term.write("Computer name: ")
     os.setComputerLabel(read())
 end
+
+local branchFile = fs.open('/osBranch', 'w')
+f.write(newVersion)
+f.close()
 
 print("")
 print("OS downloaded, ready for reboot")
