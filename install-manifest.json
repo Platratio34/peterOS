@@ -80,7 +80,8 @@
         "os/bin/sudo.lua",
         "os/bin/version.lua",
         "os/bin/osUpdate.lua",
-        "os/bin/ping.lua"
+        "os/bin/ping.lua",
+        "os/bin/useradd.lua"
     ],
     "pgms":[
         "pgm-get",
