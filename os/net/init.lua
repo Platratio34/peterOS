@@ -488,6 +488,9 @@ local function eventHandler(event)
         if msg.header.originDomain then
             origin = msg.header.originDomain ---@cast origin string
         end
+        if msg.header.rspDomain then
+            origin = msg.header.rspDomain ---@cast origin string
+        end
 
         if processedMessages[origin .. msg.msgid] then -- we already determined that this message was bad
             return

@@ -66,7 +66,7 @@ function certificate.check(cert)
     end
 
     local issuerKey = {}
-    if cert.issuer == "cca" then
+    if cert.issuer == "cca" or cert.id == "cca" then
         issuerKey = ccaCert.key
     elseif cert.parent then
         if not certificate.check(cert.parent) then
@@ -200,8 +200,7 @@ function certificate.addCert(msg)
     if cert.validUntil < os.epoch('utc') then
         netLog:warn('Certificate ' .. cert.id .. ' expired')
         return msg
-    elseif cert.validUntil < os.epoch('utc') + (8.64e7) then
-        ---TODO probably should do something to refresh it here?
+    elseif cert.validUntil < os.epoch('utc') + (8.64e7) then -- one day?
         if not alreadyRenewing[cert.id] then
             netLog:warn('Certificate ' .. cert.id .. ' is going to expire within 1 day')
             local timer = os.startTimer(1)
