@@ -1,6 +1,7 @@
 local args = {...}
 local log = args[1]
 local require = args[2]
+local osInternal = args[3]
 local expect = require("cc.expect")
 
 local eventHandlers = {} ---@type table<number, EventHandler>
@@ -34,7 +35,7 @@ os.pullEventRaw = pullEventRaw
 
 os.pullEvent = function(sFilter)
     local event = { os.pullEventRaw(sFilter) }
-    if event[1] == "terminate" then
+    if event[1] == "terminate" and not osInternal.blockTerminate then
         error("Terminating", 0)
     end
     return table.unpack(event)

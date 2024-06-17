@@ -6,5 +6,6 @@
     {"name":"sudo", "exec":"sudo.lua", "cmpt":"sudo-complete", "version":0},
     {"name":"version", "exec":"version.lua", "cmpt":null, "version":0},
     {"name":"osUpdate", "exec":"osUpdate.lua", "cmpt":null, "version":0},
-    {"name":"ping", "exec":"ping.lua", "cmpt":null, "version":0}
+    {"name":"ping", "exec":"ping.lua", "cmpt":null, "version":0},
+    {"name":"useradd", "exec":"useradd.lua", "cmpt":null, "version":0}
 ]

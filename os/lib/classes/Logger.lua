@@ -144,35 +144,55 @@ end
 
 ---Logs a <code>DEBUG</code> message
 ---@param message any Debug message
-function Logger:debug(message)
+---@param ... any Arguments to be passed to a `string.format`
+function Logger:debug(message, ...)
     if self.__level < 5 then return end
+    if ... then
+        message = message:format(...)
+    end
     self:write('DEBUG: ' .. self:getTimeString() .. tostring(message))
 end
 
 ---Logs an <code>INFO</code> message
 ---@param message any Info message
-function Logger:info(message)
+---@param ... any Arguments to be passed to a `string.format`
+function Logger:info(message, ...)
     if self.__level < 4 then return end
+    if ... then
+        message = message:format(...)
+    end
     self:write('INFO: ' .. self:getTimeString() .. tostring(message))
 end
 
 ---Logs a <code>WARN</code> message
 ---@param message any Warning message
-function Logger:warn(message)
+---@param ... any Arguments to be passed to a `string.format`
+function Logger:warn(message, ...)
     if self.__level < 3 then return end
+    if ... then
+        message = message:format(...)
+    end
     self:write('WARN: ' .. self:getTimeString() .. tostring(message))
 end
 
 ---Logs an <code>ERROR</code> message
 ---@param message any Error message
-function Logger:error(message)
+---@param ... any Arguments to be passed to a `string.format`
+function Logger:error(message, ...)
     if self.__level < 2 then return end
+    if ... then
+        message = message:format(...)
+    end
     self:write('ERROR: ' .. self:getTimeString() .. tostring(message))
 end
 
 ---Logs a <code>FATAL</code> message
 ---@param message any Fatal error message
-function Logger:fatal(message)
+---@param ... any Arguments to be passed to a `string.format`
+function Logger:fatal(message, ...)
     if self.__level < 1 then return end
+    if ... then
+        message = message:format(...)
+    end
     self:write('FATAL: ' .. self:getTimeString() .. tostring(message))
 end

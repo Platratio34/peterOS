@@ -31,6 +31,10 @@ else
     return
 end
 
+local internal = {
+    blockTerminate = false
+}
+
 local osFs = {
     open = fs.open,
     exists = fs.exists,
@@ -42,6 +46,7 @@ local osFs = {
     list = fs.list,
     isDir = fs.isDir
 }
+internal.fs = osFs
 
 local appdataPath = "/home/.appdata"
 
@@ -53,6 +58,7 @@ local versionId = ""
 ---OS Log
 local log = pos.Logger('/pos.log', false, true)
 pos.log = log ---OS log
+internal.log = log
 if not log then
     error('Could not open OS Log')
     return
@@ -424,7 +430,26 @@ function user.getUser()
     return cUser.name
 end
 
-local osEvents = loadfile("/os/events.lua")(log, require)
+---Make a new local user on the system. **REQUIRES SUPER USER**
+---@param name string
+---@param pass string
+---@return boolean userCreated
+function user.newUser(name, pass)
+    if not user.isSu() then
+        log:warn('Tried to make a new user, but was not super user')
+        return false
+    end
+    if fs.exists('/' .. name .. '.userDat') then
+        log:warn('Tried to make a new user, user `%s` already existed', name)
+        return false
+    end
+    local user = LocalUser(name, pass, {}) ---@type LocalUser
+    user:save()
+    log:info('User `%s` created')
+    return true
+end
+
+local osEvents = loadfile("/os/events.lua")(log, require, internal)
 
 ---Require function.
 ---Works to require pos packages from /os/ and /os/lib/
@@ -454,6 +479,55 @@ local lbl = os.getComputerLabel()
 if not (lbl == nil) then
     print("")
     print(lbl)
+end
+
+local requireLogin = false
+if fs.exists('/user.cfg') then
+    local f = fs.open('/user.cfg')
+    local userCfg = textutils.unserialiseJSON(f.readAll())
+    f.close()
+    if userCfg.requireLogin then
+        requireLogin = true
+        internal.blockTerminate = true
+    end
+end
+
+if fs.exists("/home/startup") then
+    print("Running custom startups ...")
+    print("")
+    local startupFiles = fs.list("/home/startup/")
+    if not startupFiles then
+        log:error('Could not get startup files, skipping them')
+        return
+    end
+
+    for i = 1, #startupFiles do
+        local f = startupFiles[i]
+        if (f:cont(".lua")) then
+            shell.run("/home/startup/" .. f)
+        end
+    end
+end
+
+while requireLogin do
+    print('')
+    write('Enter user name: ')
+    local username = read()
+    print()
+    write('Password for ' .. username .. ': ')
+    local password = read('')
+    local u = getUserData(username)
+    if not u then
+        return false
+    elseif u:checkPass(password) then
+        requireLogin = false
+        log:info('User %s logged in', username)
+    else
+        log:warn('Failed login for user %s', username)
+        term.setTextColor(colors.red)
+        print('Invalid user or password')
+        term.setTextColor(colors.white)
+    end
 end
 
 local vRsp, vMsg = http.get("https://raw.githubusercontent.com/Platratio34/peterOS/master/version.txt")
@@ -494,20 +568,3 @@ if fs.exists("/disk/diskInstaller/installer.lua") then
 end
 
 shell.setDir("/home/")
-
-if fs.exists("/home/startup") then
-    print("Running custom startups ...")
-    print("")
-    local startupFiles = fs.list("/home/startup/")
-    if not startupFiles then
-        log:error('Could not get startup files, skipping them')
-        return
-    end
-
-    for i = 1, #startupFiles do
-        local f = startupFiles[i]
-        if (f:cont(".lua")) then
-            shell.run("/home/startup/" .. f)
-        end
-    end
-end
