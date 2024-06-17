@@ -524,9 +524,7 @@ while requireLogin do
         log:info('User %s logged in', username)
     else
         log:warn('Failed login for user %s', username)
-        term.setTextColor(colors.red)
-        print('Invalid user or password')
-        term.setTextColor(colors.white)
+        printError('Invalid user or password')
     end
 end
 
