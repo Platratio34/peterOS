@@ -96,10 +96,10 @@ function certificate.check(cert)
 
     local o = {
         id = cert.id,
-        origin = cert.origin,
         key = cert.key,
         canSign = cert.canSign,
-        signer = cert.issuer
+        validUntil = cert.validUntil,
+        issuer = cert.issuer
     }
     local valid = ecc.verify(issuerKey, textutils.serialise(o), cert.signature)
 
