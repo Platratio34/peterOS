@@ -123,18 +123,19 @@ function certificate.getKey(msg)
     if not certificate.available then
         return msg.header.publicKey
     end
+    local origin = msg.header.originDomain or msg.header.rspDomain
     if msg.header.certificate then
         local cert = msg.header.certificate ---@cast cert net.Certificate
-        if msg.header.originDomain ~= cert.id then
+        if origin ~= cert.id then
             return nil
         elseif certificate.check(cert) then
             return cert.key
         else
             return nil
         end
-    elseif msg.header.originDomain then
-        if cache[msg.header.originDomain] then
-            local cert = cache[msg.msg.header.originDomain]
+    elseif origin then
+        if cache[origin] then
+            local cert = cache[origin]
             if cert.validUntil < os.epoch('utc') then
                 return nil
             end
@@ -178,12 +179,13 @@ local alreadyRenewing = {} ---@type {string: boolean}
 ---@param msg NetMessage
 ---@return NetMessage
 function certificate.addCert(msg)
-    if not msg.header.originDomain then
+    local origin = msg.header.originDomain or msg.header.rspDomain
+    if not origin then
         return msg
     end
-    local certPath = selfCertFilePath .. msg.header.originDomain .. '.cert'
+    local certPath = selfCertFilePath .. origin .. '.cert'
     if not fs.exists(certPath) then
-        netLog:warn('Tried to load self certificate for `'..msg.header.originDomain..'`, could not be found')
+        netLog:warn('Tried to load self certificate for `'..origin..'`, could not be found')
         return msg
     end
     local certFile = fs.open(certPath, 'r')
