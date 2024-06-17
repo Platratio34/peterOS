@@ -443,7 +443,7 @@ function user.newUser(name, pass)
         log:warn('Tried to make a new user, user `%s` already existed', name)
         return false
     end
-    local user = LocalUser(name, pass, {}) ---@type LocalUser
+    local user = pos.instanceClass(LocalUser, name, pass, {}) ---@type LocalUser
     user:save()
     log:info('User `%s` created')
     return true
