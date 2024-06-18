@@ -457,8 +457,8 @@ function user.logout()
     end
     
     if user.getUser() then
-        local user = user.getUser()
-        print("Logged out of "..user)
+        local u = user.getUser()
+        print("Logged out of "..u)
         user.changeUser('')
     end
     
