@@ -511,7 +511,7 @@ function user.changePassword(username, oldPass, newPass)
     if user.isSu() then
         log:warn('Password for %s changed by super user', username)
     end
-    if not u:setPass(oldPass, newPass) then
+    if not u:setPass(oldPass or '', newPass) then
         log:warn('Password change attempt by %s for %s failed', username, user.getUser())
         return false
     end
