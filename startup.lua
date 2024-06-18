@@ -483,7 +483,7 @@ end
 
 local requireLogin = false
 if fs.exists('/user.cfg') then
-    local f = fs.open('/user.cfg')
+    local f = fs.open('/user.cfg', 'r')
     local userCfg = textutils.unserialiseJSON(f.readAll())
     f.close()
     if userCfg.requireLogin then

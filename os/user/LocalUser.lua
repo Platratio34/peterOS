@@ -2,7 +2,7 @@
 ---@field perm nil|{string: boolean} **FILE ONLY** permission dictionary
 ---@field protected _perm {string: boolean} User permissions
 ---@field name string User name
----@field pasH string Hashed password (SHA-256)
+---@field pswH string Hashed password (SHA-256)
 local LocalUser = {
     perm = {},
     _perm = {}
@@ -21,7 +21,7 @@ local sha256 = require("hash.sha256")
 ---@return LocalUser?
 function LocalUserMT.__call(name, pass, perm)
     if fs.exists(name .. '.userDat') then
-        osLog:warn('Tried to create a new user "' .. name .. '", but it already existed')
+        osLog:warn('Tried to create a new user "%s", but it already existed', name)
         return nil
     end
     if type(perm) ~= 'table' then
@@ -40,7 +40,7 @@ function LocalUserMT.__call(name, pass, perm)
     setmetatable(user, LocalUserMT) ---@cast user LocalUser
     user:__init__(name, pass, perm)
     user:save()
-    osLog:info('Created new user "' .. name .. '"')
+    osLog:info('Created new user "%s"', name)
     return user
 end
 
@@ -51,7 +51,7 @@ end
 ---@package
 function LocalUser:__init__(name, pass, perm)
     self.name = name
-    self.pasH = sha256.hash(pass)
+    self.pswH = sha256.hash(pass)
     self._perm = perm
 end
 
@@ -59,10 +59,10 @@ end
 ---@param name string Username
 ---@return LocalUser? user
 function LocalUser.fromFile(name)
-    if not fs.exists(name .. '.userDat') then
+    if not fs.exists('/'..name .. '.userDat') then
         return nil
     end
-    local f = fsOpen(name .. '.userDat', 'r')
+    local f = fsOpen('/'..name .. '.userDat', 'r')
     if not f then
         osLog:error('Could not read userdata file for "' .. name..'"')
         return nil

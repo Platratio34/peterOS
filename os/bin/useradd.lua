@@ -18,4 +18,4 @@ local password = read('')
 if not user.newUser(username, password) then
     printError("Unable to make new user")
 end
-print('New user with name '..username..'created')
+print('New user with name '..username..' created')
