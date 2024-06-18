@@ -1,5 +1,5 @@
 local parser = pos.Parser()
-parser:addFlag('user', 'u')
+parser:addFlag('user', 'u', true)
 
 local args, flags = parser:parse({...})
 

@@ -21,11 +21,17 @@ function Parser:parse(args)
     local cArgs = {} ---@type string[]
 
     local temp = nil
+    local flagName = nil
 
-    for _,arg in pairs(args) do
+    for _, arg in pairs(args) do
         if temp then
             if arg:ends('"') then
-                table.insert(cArgs,temp..arg:sub(1,-2))
+                if flagName then
+                    cFlags[flagName] = temp..arg:sub(1,-2)
+                    flagName = nil
+                else
+                    table.insert(cArgs,temp..arg:sub(1,-2))
+                end
                 temp = nil
             else
                 temp = temp .. arg
@@ -47,12 +53,20 @@ function Parser:parse(args)
             end
             if self.flags[name] then
                 name = self.flags[name].name
+                if self.flags[name].split then
+                    flagName = name
+                end
             end
             cFlags[name] = val
         elseif arg:start('"') then
             temp = arg:sub(2)
         else
-            table.insert(cArgs,arg)
+            if flagName then
+                cFlags[flagName] = arg
+                flagName = nil
+            else
+                table.insert(cArgs,arg)
+            end
         end
     end
 
@@ -62,10 +76,11 @@ end
 ---Add a flag to the parser
 ---@param name string Flag name
 ---@param short? string Short name for flag
-function Parser:addFlag(name, short)
+function Parser:addFlag(name, short, split)
     local flag = {
         name = name,
-        short = short
+        short = short,
+        split = split or false,
     }
     self.flags[name] = flag
     if short then
@@ -76,3 +91,4 @@ end
 ---@class CLFlag
 ---@field name string Flag full name
 ---@field short string? *(Optional)* Flag short name
+---@field split boolean If the flag and value are split by a space
