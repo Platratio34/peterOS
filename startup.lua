@@ -401,7 +401,7 @@ end
 
 ---Change the current user
 ---@param name string New username
----@param pass string New user password
+---@param pass string? New user password
 ---@return boolean changed
 function user.changeUser(name, pass)
     if name == '' then
@@ -447,6 +447,50 @@ function user.newUser(name, pass)
     user:save()
     log:info('User `%s` created')
     return true
+end
+
+function user.logout()
+    if user.isSu() then
+        user.sudo("")
+        print("Logged out of root")
+        return
+    end
+    
+    if user.getUser() then
+        local user = user.getUser()
+        print("Logged out of "..user)
+        user.changeUser('')
+    end
+    
+    if not fs.exists('/user.cfg') then
+        return
+    end
+    local userCfgFile = fs.open('/user.cfg', 'r')
+    ---@diagnostic disable-next-line: need-check-nil
+    local userCfg = textutils.unserialiseJSON(userCfgFile.readAll())
+    ---@diagnostic disable-next-line: need-check-nil
+    userCfgFile.close()
+    local requireLogin = userCfg.requireLogin
+    
+    while requireLogin do
+        internal.blockTerminate = true
+        print('')
+        write('Enter user name: ')
+        local username = read()
+        print()
+        write('Password for ' .. username .. ': ')
+        local password = read('')
+        if user.changeUser(username, password) then
+            requireLogin = false
+            log:info('User %s logged in', username)
+            print('Welcome ' .. username)
+            internal.blockTerminate = false
+            return
+        else
+            log:warn('Failed login for user %s', username)
+            printError('Invalid user or password')
+        end
+    end
 end
 
 local osEvents = loadfile("/os/events.lua")(log, require, internal)
@@ -516,18 +560,17 @@ while requireLogin do
     print()
     write('Password for ' .. username .. ': ')
     local password = read('')
-    local u = getUserData(username)
-    if not u then
-        return false
-    elseif u:checkPass(password) then
+    if user.changeUser(username, password) then
         requireLogin = false
         log:info('User %s logged in', username)
-        print('Welcome '..username)
+        print('Welcome ' .. username)
     else
         log:warn('Failed login for user %s', username)
         printError('Invalid user or password')
     end
 end
+
+internal.blockTerminate = false
 
 local vRsp, vMsg = http.get("https://raw.githubusercontent.com/Platratio34/peterOS/master/version.txt")
 
