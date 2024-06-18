@@ -522,6 +522,7 @@ while requireLogin do
     elseif u:checkPass(password) then
         requireLogin = false
         log:info('User %s logged in', username)
+        print('Welcome '..username)
     else
         log:warn('Failed login for user %s', username)
         printError('Invalid user or password')
