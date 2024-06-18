@@ -449,19 +449,20 @@ function user.newUser(name, pass)
     return true
 end
 
+---Logout the current user
 function user.logout()
     if user.isSu() then
         user.sudo("")
         print("Logged out of root")
         return
     end
-    
+
     if user.getUser() then
         local u = user.getUser()
-        print("Logged out of "..u)
+        print("Logged out of " .. u)
         user.changeUser('')
     end
-    
+
     if not fs.exists('/user.cfg') then
         return
     end
@@ -471,7 +472,7 @@ function user.logout()
     ---@diagnostic disable-next-line: need-check-nil
     userCfgFile.close()
     local requireLogin = userCfg.requireLogin
-    
+
     while requireLogin do
         internal.blockTerminate = true
         print('')
@@ -491,6 +492,33 @@ function user.logout()
             printError('Invalid user or password')
         end
     end
+end
+
+---Attempt to the change the password for specified user. **SUPER USER DOES NOT NEED OLD PASSWORD**
+---@param username string Name of the user to change password for. **CAN NOT BE `su`**
+---@param oldPass string? Current password for user OR `nil` if currently Super user
+---@param newPass string New password for user
+---@return boolean changed
+function user.changePassword(username, oldPass, newPass)
+    if username == 'su' then
+        return false
+    end
+    local u = getUserData(username)
+    if not u then
+        log:warn('Tried to change password for %s, but user does not exist', username)
+        return false
+    end
+    if user.isSu() then
+        log:warn('Password for %s changed by super user', username)
+    end
+    if not u:setPass(oldPass, newPass) then
+        log:warn('Password change attempt by %s for %s failed', username, user.getUser())
+        return false
+    end
+    if user.getUser() ~= username then
+        log:warn('Password for %s changed by %s', username, user.getUser())
+    end
+    return true
 end
 
 local osEvents = loadfile("/os/events.lua")(log, require, internal)

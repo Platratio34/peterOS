@@ -81,7 +81,8 @@
         "os/bin/version.lua",
         "os/bin/osUpdate.lua",
         "os/bin/ping.lua",
-        "os/bin/useradd.lua"
+        "os/bin/useradd.lua",
+        "os/bin/passwd.lua"
     ],
     "pgms":[
         "pgm-get",

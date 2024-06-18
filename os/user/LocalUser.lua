@@ -154,7 +154,7 @@ end
 ---@param newPass string New password
 ---@return boolean set
 function LocalUser:setPass(oldPass, newPass)
-    if self.pswH == sha256.hash(oldPass) then
+    if self.pswH == sha256.hash(oldPass) or user.isSu() then
         self.pswH = sha256.hash(newPass)
         self:save()
         return true
