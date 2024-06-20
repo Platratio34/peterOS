@@ -587,8 +587,10 @@ if fs.exists("/home/startup") then
     end
 end
 
-while loginLoop() do
-    sleep(.1)
+if requireLogin then
+    while loginLoop() do
+        sleep(.1)
+    end
 end
 
 local vRsp, vMsg = http.get("https://raw.githubusercontent.com/Platratio34/peterOS/master/version.txt")
