@@ -449,6 +449,45 @@ function user.newUser(name, pass)
     return true
 end
 
+local requireLogin = false
+local loginAsSu = true
+if fs.exists('/user.cfg') then
+    local f = fs.open('/user.cfg', 'r')
+    local userCfg = textutils.unserialiseJSON(f.readAll())
+    f.close()
+    if userCfg.requireLogin then
+        requireLogin = true
+        internal.blockTerminate = true
+    end
+    if userCfg.loginSU == false then
+        loginAsSu = false
+    end
+end
+
+local function loginLoop()
+    internal.blockTerminate = true
+    print('')
+    write('Enter user name: ')
+    local username = read()
+    if username == 'loginAsSu' and not loginAsSu then
+        printError('Can not login as Super User')
+        return true
+    end
+    print()
+    write('Password for ' .. username .. ': ')
+    local password = read('')
+    if not user.changeUser(username, password) then
+        log:warn('Failed login for user %s', username)
+        printError('Invalid user or password')
+        return true
+    end
+
+    log:info('User %s logged in', username)
+    print('Welcome ' .. username)
+    internal.blockTerminate = false
+    return false
+end
+
 ---Logout the current user
 function user.logout()
     if user.isSu() then
@@ -463,34 +502,12 @@ function user.logout()
         user.changeUser('')
     end
 
-    if not fs.exists('/user.cfg') then
+    if not requireLogin then
         return
     end
-    local userCfgFile = fs.open('/user.cfg', 'r')
-    ---@diagnostic disable-next-line: need-check-nil
-    local userCfg = textutils.unserialiseJSON(userCfgFile.readAll())
-    ---@diagnostic disable-next-line: need-check-nil
-    userCfgFile.close()
-    local requireLogin = userCfg.requireLogin
 
-    while requireLogin do
-        internal.blockTerminate = true
-        print('')
-        write('Enter user name: ')
-        local username = read()
-        print()
-        write('Password for ' .. username .. ': ')
-        local password = read('')
-        if user.changeUser(username, password) then
-            requireLogin = false
-            log:info('User %s logged in', username)
-            print('Welcome ' .. username)
-            internal.blockTerminate = false
-            return
-        else
-            log:warn('Failed login for user %s', username)
-            printError('Invalid user or password')
-        end
+    while loginLoop() do
+        sleep(.1)
     end
 end
 
@@ -553,17 +570,6 @@ if not (lbl == nil) then
     print(lbl)
 end
 
-local requireLogin = false
-if fs.exists('/user.cfg') then
-    local f = fs.open('/user.cfg', 'r')
-    local userCfg = textutils.unserialiseJSON(f.readAll())
-    f.close()
-    if userCfg.requireLogin then
-        requireLogin = true
-        internal.blockTerminate = true
-    end
-end
-
 if fs.exists("/home/startup") then
     print("Running custom startups ...")
     print("")
@@ -581,24 +587,9 @@ if fs.exists("/home/startup") then
     end
 end
 
-while requireLogin do
-    print('')
-    write('Enter user name: ')
-    local username = read()
-    print()
-    write('Password for ' .. username .. ': ')
-    local password = read('')
-    if user.changeUser(username, password) then
-        requireLogin = false
-        log:info('User %s logged in', username)
-        print('Welcome ' .. username)
-    else
-        log:warn('Failed login for user %s', username)
-        printError('Invalid user or password')
-    end
+while loginLoop() do
+    sleep(.1)
 end
-
-internal.blockTerminate = false
 
 local vRsp, vMsg = http.get("https://raw.githubusercontent.com/Platratio34/peterOS/master/version.txt")
 
