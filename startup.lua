@@ -455,13 +455,20 @@ if fs.exists('/user.cfg') then
     local f = fs.open('/user.cfg', 'r')
     local userCfg = textutils.unserialiseJSON(f.readAll())
     f.close()
-    if userCfg.requireLogin then
-        requireLogin = true
+    if userCfg.requireLogin ~= nil then
+        requireLogin = userCfg.requireLogin
         internal.blockTerminate = true
     end
-    if userCfg.loginSU == false then
-        loginAsSu = false
+    if userCfg.loginSU ~= nil then
+        loginAsSu = userCfg.loginSU
     end
+else
+    local f = osFs.open('/user.cfg', 'w')
+    f.write(textutils.serialiseJSON({
+        requireLogin = false,
+        loginSU = true,
+    }))
+    f.close()
 end
 
 local function loginLoop()
