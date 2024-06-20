@@ -469,7 +469,7 @@ local function loginLoop()
     print('')
     write('Enter user name: ')
     local username = read()
-    if username == 'loginAsSu' and not loginAsSu then
+    if username == 'su' and not loginAsSu then
         printError('Can not login as Super User')
         return true
     end
