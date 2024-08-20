@@ -55,6 +55,7 @@
         "os/net/rttp/simpleServer.lua",
         
         "os/net/rtml/init.lua",
+        "os/net/rtml/rtmlLoader.lua",
 
         "os/user/LocalUser.lua",
         "os/user/RemoteUser.lua",
