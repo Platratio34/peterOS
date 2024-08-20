@@ -75,7 +75,7 @@ local function loadV1(rtml, lines)
 
     local inBody = false
     local cElement = nil ---@type RTMLElement?
-    local nextScreenLine = 2
+    local nextScreenLine = 1
 
     local tempText = "" ---@type string?
     local inTag = false
