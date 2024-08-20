@@ -81,9 +81,10 @@ local function loadV1(rtml, lines)
     local tempText = "" ---@type string?
     local inTag = false
 
+    local line = lines[lineN]
     while lineN <= #lines do
-        local line = lines[lineN]
         local tag, options, closer, rLine = loader.parseTag(line)
+        local dontAdvance = false
         if tag == 'body' then
             if not closer then
                 table.insert(parentTree, rtml)
@@ -106,10 +107,10 @@ local function loadV1(rtml, lines)
                     cElement.y = nextScreenLine
                     nextScreenLine = nextScreenLine + 1
                 else
-                    nextScreenLine = math.max(nextScreenLine, cElement.y+1)
+                    nextScreenLine = math.max(nextScreenLine, cElement.y + 1)
                 end
                 inTag = true
-                tempText = rLine
+                tempText = ""
                 table.insert(parentTree[#parentTree], cElement)
             else
                 cElement.text = tempText
@@ -129,10 +130,10 @@ local function loadV1(rtml, lines)
                     cElement.y = nextScreenLine
                     nextScreenLine = nextScreenLine + 1
                 else
-                    nextScreenLine = math.max(nextScreenLine, cElement.y+1)
+                    nextScreenLine = math.max(nextScreenLine, cElement.y + 1)
                 end
                 inTag = true
-                tempText = rLine
+                tempText = ""
                 table.insert(parentTree[#parentTree], cElement)
             else
                 cElement.text = tempText
@@ -152,10 +153,10 @@ local function loadV1(rtml, lines)
                     cElement.y = nextScreenLine
                     nextScreenLine = nextScreenLine + 1
                 else
-                    nextScreenLine = math.max(nextScreenLine, cElement.y+1)
+                    nextScreenLine = math.max(nextScreenLine, cElement.y + 1)
                 end
                 inTag = true
-                tempText = rLine
+                tempText = ""
                 table.insert(parentTree[#parentTree], cElement)
             else
                 cElement.text = tempText
@@ -175,10 +176,10 @@ local function loadV1(rtml, lines)
                     cElement.y = nextScreenLine
                     nextScreenLine = nextScreenLine + 1
                 else
-                    nextScreenLine = math.max(nextScreenLine, cElement.y+1)
+                    nextScreenLine = math.max(nextScreenLine, cElement.y + 1)
                 end
                 inTag = true
-                tempText = rLine
+                tempText = ""
                 table.insert(parentTree[#parentTree], cElement)
             else
                 cElement.text = tempText
@@ -194,16 +195,24 @@ local function loadV1(rtml, lines)
                 cElement.y = nextScreenLine
                 nextScreenLine = nextScreenLine + 1
             else
-                nextScreenLine = math.max(nextScreenLine, cElement.y+1)
+                nextScreenLine = math.max(nextScreenLine, cElement.y + 1)
             end
             table.insert(parentTree[#parentTree], cElement)
             if not closer then
                 error(('Malformed RTML at line %i, `input` tags must be self closing'):format(lineN), 2)
             end
         elseif inTag then
-            tempText = tempText .. line:find('%s*(.*)')
+            local _, _, text = line:find('%s*(.*)')
+            tempText = tempText .. text
         end
-        lineN = lineN + 1
+        if rLine and #rLine > 0 then
+            line = rLine
+        elseif lineN >= #lines - 1 then
+            return
+        else
+            lineN = lineN + 1
+            line = lines[lineN]
+        end
     end
 end
 
