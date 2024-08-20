@@ -1,11 +1,11 @@
 pos.require("net.rttp")
-local rtmlLoader = require 'os.net.rtml.rtmlLoader'
+local rtmlLoader = pos.require('os.net.rtml.rtmlLoader') ---@module 'os.net.rtml.rtmlLoader'
 
 local serverCfgF = fs.open("/home/www/server.cfg", "r")
 if serverCfgF ~= nil then
     local serverCfg = textutils.unserialise(serverCfgF.readAll())
     serverCfgF.close()
-    
+
     rttp.handleMsg(function(method,head,body,msg)
         if method == "GET" then
             if head.path == "" then
