@@ -42,5 +42,5 @@ else
 end
 
 net.setup()
+rttp.registerHandler()
 print("Starting RTTP server at "..net.ipFormat(net.getIP())..":10080")
-rttp.runServer()

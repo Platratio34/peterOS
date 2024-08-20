@@ -1,5 +1,6 @@
 ---@module 'os.net.rtml.rtmlLoader'
 
+pos.require('net.rtml')
 local loader = {}
 
 ---Load an RTML file by filename
@@ -93,6 +94,9 @@ local function loadV1(rtml, lines)
             end
         elseif tag == 'text' then
             if not closer then
+                if cElement ~= nil then
+                    error(('Malformed RTML at line %i, unclosed tag'):format(lineN), 2)
+                end
                 cElement = options or {} ---@cast options RTMLElement
                 cElement.type = net.rtml.TYPE_TEXT
                 if not cElement.x then
@@ -109,9 +113,13 @@ local function loadV1(rtml, lines)
                 table.insert(parentTree[#parentTree], cElement)
             else
                 cElement.text = tempText
+                cElement = nil
             end
         elseif tag == 'link' then
             if not closer then
+                if cElement ~= nil then
+                    error(('Malformed RTML at line %i, unclosed tag'):format(lineN), 2)
+                end
                 cElement = options or {} ---@cast options RTMLElement
                 cElement.type = net.rtml.TYPE_LINK
                 if not cElement.x then
@@ -128,9 +136,13 @@ local function loadV1(rtml, lines)
                 table.insert(parentTree[#parentTree], cElement)
             else
                 cElement.text = tempText
+                cElement = nil
             end
         elseif tag == 'dom-link' then
             if not closer then
+                if cElement ~= nil then
+                    error(('Malformed RTML at line %i, unclosed tag'):format(lineN), 2)
+                end
                 cElement = options or {} ---@cast options RTMLElement
                 cElement.type = net.rtml.TYPE_DOM_LINK
                 if not cElement.x then
@@ -147,9 +159,13 @@ local function loadV1(rtml, lines)
                 table.insert(parentTree[#parentTree], cElement)
             else
                 cElement.text = tempText
+                cElement = nil
             end
         elseif tag == 'button' then
             if not closer then
+                if cElement ~= nil then
+                    error(('Malformed RTML at line %i, unclosed tag'):format(lineN), 2)
+                end
                 cElement = options or {} ---@cast options RTMLElement
                 cElement.type = net.rtml.TYPE_BUTTON
                 if not cElement.x then
@@ -166,6 +182,7 @@ local function loadV1(rtml, lines)
                 table.insert(parentTree[#parentTree], cElement)
             else
                 cElement.text = tempText
+                cElement = nil
             end
         elseif tag == 'input' then
             cElement = options or {} ---@cast options RTMLElement
@@ -195,7 +212,7 @@ end
 ---@return table? rtml RTML as lua object OR `nil` if it could not be parsed
 function loader.load(file)
     if #file < 6 then return nil end
-    if file:sub(1, 6) == '<RTML>' then
+    if file:sub(1, 5) == '<RTML' then
         local rtml = {}
         local lines = file:split('\n')
         local _, rtmlOptions = loader.parseTag(lines[1])
