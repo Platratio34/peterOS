@@ -12,7 +12,8 @@ local rtml = {}
 ---@field name nil|string (Form Element Only) Element name
 ---@field len nil|number (Input Only) Length of element
 ---@field hide nil|boolean (Input Only) If input text should be hidden
----@field action nil|string (Button Only) Button action
+---@field next nil|string (Input Only) Next input to focus by form element name
+---@field action nil|"SUBMIT"|"PUSH" (Button Only) Button action
 
 ---Create a new typed RTMLElement
 ---@param type string Element type (one of <code>net.rtml.TYPE_*</code>)
@@ -68,7 +69,7 @@ end
 ---@param x number X position
 ---@param y number Y position
 ---@param text string Button text
----@param action string Button action (one of <code>net.rtml.BUTTON_ACTION_*</code>)
+---@param action "SUBMIT"|"PUSH" Button action (one of <code>net.rtml.BUTTON_ACTION_*</code>)
 ---@return RTMLElement
 function rtml.createButton(x, y, text, action)
     local el = rtml.createElement(rtml.TYPE_BUTTON, x, y)
@@ -136,7 +137,7 @@ end
 ---@param x number X position
 ---@param y number Y position
 ---@param text string Button text
----@param action string Button action (ie. <code>SUBMIT</code>)
+---@param action "SUBMIT"|"PUSH" Button action (ie. <code>SUBMIT</code>)
 function RTMLContext:addButton(x, y, text, action)
     self:addElement(rtml.createButton(x, y, text, action))
 end
