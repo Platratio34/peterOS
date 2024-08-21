@@ -185,6 +185,9 @@ function certificate.addCert(msg)
     end
     local certPath = selfCertFilePath .. origin .. '.cert'
     if not fs.exists(certPath) then
+        if origin:ends('.lan') then -- Don't warn if it's a lan address
+            return msg
+        end
         netLog:warn('Tried to load self certificate for `'..origin..'`, could not be found')
         return msg
     end
