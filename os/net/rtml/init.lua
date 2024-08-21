@@ -1,6 +1,6 @@
 local rtml = {}
 
----@class RTMLElement
+---@class RTMLElement RTML element
 ---@field type string Element type
 ---@field x number X position of the element
 ---@field y number Y position of the element
@@ -8,15 +8,15 @@ local rtml = {}
 ---@field bgColor nil|color|string Element background color
 ---@field id nil|string Element ID
 ---@field text nil|string Element text
----@field href nil|string Link url
----@field name nil|string (Form Element Only) Element name
----@field len nil|number (Input Only) Length of element
----@field hide nil|boolean (Input Only) If input text should be hidden
----@field next nil|string (Input Only) Next input to focus by form element name
----@field action nil|"SUBMIT"|"PUSH" (Button Only) Button action
+---@field href nil|string *(Link Element Only)* Link url
+---@field name nil|string *(Form Element Only)* Element name
+---@field len nil|number *(Input Only)* Length of element
+---@field hide nil|boolean *(Input Only)* If input text should be hidden
+---@field next nil|string *(Input Only)* Next input to focus by form element name
+---@field action nil|"SUBMIT"|"PUSH" *(Button Only)* Button action
 
 ---Create a new typed RTMLElement
----@param type string Element type (one of <code>net.rtml.TYPE_*</code>)
+---@param type string Element type (one of `net.rtml.TYPE_*`)
 ---@param x number X position of the element
 ---@param y number Y position of the element
 ---@return RTMLElement
@@ -28,7 +28,7 @@ end
 ---@param x number X position
 ---@param y number Y position
 ---@param text string Element text
----@param color color|nil (Optional) Text color
+---@param color nil|color|string *(Optional)* Text color
 ---@return RTMLElement
 function rtml.createText(x, y, text, color)
     local el = rtml.createElement(rtml.TYPE_TEXT, x, y)
@@ -40,8 +40,8 @@ end
 ---Create a new link element
 ---@param x number X position
 ---@param y number Y position
----@param text string Element text
----@param href string Link destination, can be absolute (<code>"/path"</code>), or relative (<code>"path"</code>)
+---@param text string Link text
+---@param href string Link destination, can be absolute (`"/path"`), or relative (`"path"`)
 ---@return RTMLElement
 function rtml.createLink(x, y, text, href)
     local el = rtml.createElement(rtml.TYPE_LINK, x, y)
@@ -55,7 +55,7 @@ end
 ---@param y number Y position
 ---@param length number Input length
 ---@param name string Input name for forms
----@param hide boolean|nil (Optional) If input text should be hidden
+---@param hide boolean? *(Optional)* If input text should be hidden
 ---@return RTMLElement
 function rtml.createInput(x, y, length, name, hide)
     local el = rtml.createElement(rtml.TYPE_INPUT, x, y)
@@ -69,7 +69,7 @@ end
 ---@param x number X position
 ---@param y number Y position
 ---@param text string Button text
----@param action "SUBMIT"|"PUSH" Button action (one of <code>net.rtml.BUTTON_ACTION_*</code>)
+---@param action "SUBMIT"|"PUSH" Button action (one of `net.rtml.BUTTON_ACTION_*`)
 ---@return RTMLElement
 function rtml.createButton(x, y, text, action)
     local el = rtml.createElement(rtml.TYPE_BUTTON, x, y)
@@ -77,7 +77,7 @@ function rtml.createButton(x, y, text, action)
     el.action = action
     return el
 end
----Create a new submit button element (equivalent to setting <code>action</code> to <code>"SUBMIT"</code> for <code>createButton()</code>)
+---Create a new submit button element (equivalent to setting `action` to `"SUBMIT"` for `createButton()`)
 ---@param x number X position
 ---@param y number Y position
 ---@param text string Button text
@@ -86,7 +86,7 @@ function rtml.createSubmitButton(x, y, text)
     return rtml.createButton(x, y, text, rtml.BUTTON_ACTION_SUBMIT)
 end
 
----@class RTMLContext
+---@class RTMLContext RTML context builder
 ---@field elements RTMLElement[] context elements
 local RTMLContext = {
     elements = {}
@@ -120,7 +120,7 @@ end
 ---@param x number X position
 ---@param y number Y position
 ---@param text string Element text
----@param href string Link destination, can be absolute (<code>"/path"</code>), or relative (<code>"path"</code>)
+---@param href string Link destination, can be absolute (`"/path"`), or relative (`"path"`)
 function RTMLContext:addLink(x, y, text, href)
     self:addElement(rtml.createLink(x, y, text, href))
 end
@@ -137,11 +137,11 @@ end
 ---@param x number X position
 ---@param y number Y position
 ---@param text string Button text
----@param action "SUBMIT"|"PUSH" Button action (ie. <code>SUBMIT</code>)
+---@param action "SUBMIT"|"PUSH" Button action (ie. `SUBMIT`)
 function RTMLContext:addButton(x, y, text, action)
     self:addElement(rtml.createButton(x, y, text, action))
 end
----Add a new submit button element (equivalent to setting <code>action</code> to <code>"SUBMIT"</code> for <code>addButton()</code>)
+---Add a new submit button element (equivalent to setting `action` to `"SUBMIT"` for `addButton()`)
 ---@param x number X position
 ---@param y number Y position
 ---@param text string Button text
@@ -149,13 +149,13 @@ function RTMLContext:addSubmitButton(x, y, text)
     self:addElement(rtml.createSubmitButton(x, y, text))
 end
 
-rtml.TYPE_TEXT = "TEXT"
-rtml.TYPE_INPUT = "INPUT"
-rtml.TYPE_LINK = "LINK"
-rtml.TYPE_DOMAIN_LINK = "DOM-LINK"
-rtml.TYPE_BUTTON = "BUTTON"
+rtml.TYPE_TEXT = "TEXT" --- Element type code for a text element
+rtml.TYPE_INPUT = "INPUT" --- Element type code for a text input element
+rtml.TYPE_LINK = "LINK" --- Element type code for a link element
+rtml.TYPE_DOMAIN_LINK = "DOM-LINK" --- Element type code for a domain link element
+rtml.TYPE_BUTTON = "BUTTON" --- Element type code for a button element
 
-rtml.BUTTON_ACTION_SUBMIT = 'SUBMIT'
-rtml.BUTTON_ACTION_PUSH = 'PUSH'
+rtml.BUTTON_ACTION_SUBMIT = 'SUBMIT' --- Button action code for form submission
+rtml.BUTTON_ACTION_PUSH = 'PUSH' --- Button action code for button ID push
 
 net.rtml = rtml

@@ -4,7 +4,7 @@ pos.require('net.rtml')
 local loader = {}
 
 ---Load an RTML file by filename
----@param filename string
+---@param filename string Path to file to load and parse
 ---@return table? rtml RTML as lua object OR `nil` if it could not be parsed
 function loader.loadFile(filename)
     local f = fs.open(filename, 'r')
@@ -16,12 +16,12 @@ function loader.loadFile(filename)
     return rtml
 end
 
----Get XML tag name and options
----@param line string
----@return nil|string name
----@return table? options
----@return boolean? closingTag
----@return string? line
+---Get XML tag name and attributes
+---@param line string Line to parse for XML tag
+---@return nil|string name Name of the tag
+---@return {string: any}? attributes Attribute table of tag (will be `nil` if tag is closing tag)
+---@return boolean? closingTag If the tag is self closing or a closing tag
+---@return string? line Remaining portion of line after XML tag
 function loader.parseTag(line)
     local _, sI, name, nameEnder = line:find('%s*<(%a+)%s*(/?>?)%s*')
     if not sI then
@@ -34,10 +34,10 @@ function loader.parseTag(line)
     if nameEnder == '>' or nameEnder == '/>' then
         return name, {}, nameEnder == '/>', line:sub(sI+1)
     end
-    local options = {}
+    local attributes = {}
     while sI < #line do
-        local optNameEnd, valStart, optName, nxt = line:find('%s*(%a+)%s*=%s*(.)', sI)
-        if not optNameEnd or not valStart then
+        local atrNameEnd, valStart, atrName, nxt = line:find('%s*(%a+)%s*=%s*(.)', sI)
+        if not atrNameEnd or not valStart then
             return nil
         end
         if nxt == '"' then
@@ -45,9 +45,9 @@ function loader.parseTag(line)
             if not valEnd or not breakEnd then
                 return nil
             end
-            options[optName] = valStr
+            attributes[atrName] = valStr
             if valEnder == '>' or valEnder == '/>' then
-                return name, options, valEnder == '/>', line:sub(breakEnd+1)
+                return name, attributes, valEnder == '/>', line:sub(breakEnd+1)
             else
                 sI = breakEnd
             end
@@ -56,15 +56,15 @@ function loader.parseTag(line)
             if not valEnd or not breakEnd then
                 return nil
             end
-            options[optName] = textutils.unserialise(valStr)
+            attributes[atrName] = textutils.unserialise(valStr)
             if valEnder == '>' or valEnder == '/>' then
-                return name, options, valEnder == '/>', line:sub(breakEnd+1)
+                return name, attributes, valEnder == '/>', line:sub(breakEnd+1)
             else
                 sI = breakEnd
             end
         end
     end
-    return name, options, false, ""
+    return name, attributes, false, ""
 end
 
 ---Load rtml from plaintext XML in version 1
@@ -91,7 +91,7 @@ local function loadV1(rtml, lines)
             tempText = tempText .. linePre
         end
         line = linePost
-        local tag, options, closer, rLine = loader.parseTag(line)
+        local tag, attributes, closer, rLine = loader.parseTag(line)
         if tag == 'body' then
             if not closer then
                 table.insert(parentTree, rtml)
@@ -105,7 +105,7 @@ local function loadV1(rtml, lines)
                 if cElement ~= nil then
                     error(('Malformed RTML at line %i, unclosed tag'):format(lineN), 2)
                 end
-                cElement = options or {} ---@cast options RTMLElement
+                cElement = attributes--[[@as RTMLElement]] or {}
                 cElement.type = net.rtml.TYPE_TEXT
                 if not cElement.x then
                     cElement.x = 1
@@ -128,7 +128,7 @@ local function loadV1(rtml, lines)
                 if cElement ~= nil then
                     error(('Malformed RTML at line %i, unclosed tag'):format(lineN), 2)
                 end
-                cElement = options or {} ---@cast options RTMLElement
+                cElement = attributes--[[@as RTMLElement]] or {}
                 cElement.type = net.rtml.TYPE_LINK
                 if not cElement.x then
                     cElement.x = 1
@@ -151,7 +151,7 @@ local function loadV1(rtml, lines)
                 if cElement ~= nil then
                     error(('Malformed RTML at line %i, unclosed tag'):format(lineN), 2)
                 end
-                cElement = options or {} ---@cast options RTMLElement
+                cElement = attributes--[[@as RTMLElement]] or {}
                 cElement.type = net.rtml.TYPE_DOM_LINK
                 if not cElement.x then
                     cElement.x = 1
@@ -174,7 +174,7 @@ local function loadV1(rtml, lines)
                 if cElement ~= nil then
                     error(('Malformed RTML at line %i, unclosed tag'):format(lineN), 2)
                 end
-                cElement = options or {} ---@cast options RTMLElement
+                cElement = attributes--[[@as RTMLElement]] or {}
                 cElement.type = net.rtml.TYPE_BUTTON
                 if not cElement.x then
                     cElement.x = 1
@@ -193,7 +193,7 @@ local function loadV1(rtml, lines)
                 cElement = nil
             end
         elseif tag == 'input' then
-            cElement = options or {} ---@cast options RTMLElement
+            cElement = attributes--[[@as RTMLElement]] or {}
             cElement.type = net.rtml.TYPE_BUTTON
             if not cElement.x then
                 cElement.x = 1
@@ -224,7 +224,7 @@ local function loadV1(rtml, lines)
 end
 
 ---Load rtml from plaintext lua object or XML
----@param file string
+---@param file string File as string to parse
 ---@return table? rtml RTML as lua object OR `nil` if it could not be parsed
 function loader.load(file)
     if #file < 6 then return nil end
