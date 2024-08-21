@@ -64,7 +64,7 @@ function loader.parseTag(line)
             end
         end
     end
-    return name, options, false
+    return name, options, false, ""
 end
 
 ---Load rtml from plaintext XML in version 1
@@ -83,8 +83,15 @@ local function loadV1(rtml, lines)
 
     local line = lines[lineN]
     while lineN <= #lines do
+        local _, _, linePre, linePost = line:find('([^<]*)(<.*)')
+        if not linePre then
+            error(('Malformed RTML at line %i, can not parse line'):format(lineN), 2)
+        end
+        if #linePre > 0 and inTag then
+            tempText = tempText .. linePre
+        end
+        line = linePost
         local tag, options, closer, rLine = loader.parseTag(line)
-        local dontAdvance = false
         if tag == 'body' then
             if not closer then
                 table.insert(parentTree, rtml)
