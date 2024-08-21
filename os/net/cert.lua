@@ -337,7 +337,7 @@ function certificate.setupCertServer(issuer, period, arbitrary)
         end
         if msg.port == net.standardPorts.network and msg.type == 'certRenew' then
             local req = msg.body ---@cast req net.Certificate
-            if not validCerts[req] then
+            if not validCerts[req.id] then
                 msg:reply(net.standardPorts.network, { type = "certRenew", originDomain = issuer, failed = 'true' }, {})
                 return
             end
