@@ -1,0 +1,213 @@
+local xml = {
+    PARENT_ELEMENT_NAME = "_xml_"
+}
+
+---@class XMLElement XML element
+---@field name string Name of the element
+---@field attributes {string: any} Table of attributes
+---@field children XMLElement[] List of children in order found
+---@field inner string? Non-element text between opening and closing elements
+---@field parent XMLElement? Parent of this element
+---@field selfClosing boolean? If this element is self closing
+---@field closing boolean? If this element is a closing element
+local XMLElement = {}
+
+local XMLElement_MT = {}
+
+---Initialize this XML element
+---@package
+---@param name string? *(Optional)* Element name
+function XMLElement:__init__(name)
+    self.name = name or ""
+    self.attributes = {}
+    self.children = {}
+end
+
+---Add a child to this XML element. **Will set child's `parent` element**
+---@param child XMLElement Child element to add
+function XMLElement:addChild(child)
+    table.insert(self.children, child)
+    child.parent = self
+end
+
+---__index meta-method for XMLElement
+---@param index any
+---@return any
+function XMLElement_MT:__index(index)
+    if type(index) == 'string' then
+        return XMLElement[index]
+    end
+    if type(index) == 'number' then
+        return self.children[index]
+    end
+    return nil
+end
+
+---Checks if matching string is a start
+---@param str string String to check in
+---@param pattern string Pattern to check for
+---@param start number? Location in `str` to checking from
+---@return boolean matches If the pattern was found a the start of string or at `start`
+local function matches(str, pattern, start)
+    local s, e = str:find(pattern, start)
+    return s == (start or 1)
+end
+
+---Parses a string form XML data
+---@param str string String to parse
+---@return XMLElement xml Parent XML element
+function xml.parse(str)
+    local xmlFile = xml.XMLElement(xml.PARENT_ELEMENT_NAME)
+    local cElement = xmlFile ---@type XMLElement
+    while #str > 0 do
+        if matches(str, '%s*<!%-%-') then
+            local _, commentEnd = str:find('%-%->')
+            str = str:sub(commentEnd + 1)
+        elseif matches(str, '%s*<') then
+            local element, remaining = xml.parseForElement(str)
+            if element then
+                str = remaining --[[@as string]]
+                if element.closing then
+                    if cElement.name ~= element.name then
+                        error(
+                        ('Malformed XML, unclosed element of type `%s` at `%s` trying to close element of type `%s`')
+                        :format(cElement.name, str, element.name), 2)
+                    end
+                    cElement = cElement.parent--[[@as XMLElement]]
+                else
+                    cElement:addChild(element)
+                    if not element.selfClosing then
+                        cElement = element
+                    end
+                end
+            end
+        elseif cElement.name ~= xml.PARENT_ELEMENT_NAME then
+            local _, _, inner, next = str:find('([^<]*)(.*)')
+            if not inner then
+                error(('Malformed XML, element of type %s was never closed at `%s`'):format(cElement.name, str), 2)
+            end
+            str = next
+            cElement.inner = inner
+        else
+            error(('Malformed XML, found text outside of any element: `%s`...'):format(str:sub(1, 12)), 2)
+        end
+    end
+    if cElement.name ~= xml.PARENT_ELEMENT_NAME then
+        error(('Malformed XML, tag `%s` was never closed'):format(cElement.name), 2)
+    end
+    return xmlFile
+end
+
+---Parse a string for the next XML Element
+---@param str string String to parse
+---@return XMLElement? xmlElement XML element, if present
+---@return string? recaning String after XML element (string includes respective closing element)
+function xml.parseForElement(str)
+    local element = xml.XMLElement()
+    if matches(str, '%s*</(%a+)%s*>') then
+        local _, _, tagName, remaining2 = str:find('%s*</(%a+)%s*>(.*)')
+        if (tagName == xml.PARENT_ELEMENT_NAME) then
+            error(('Invalid XML Element name; cannot be `%s`'):format(xml.PARENT_ELEMENT_NAME), 2)
+        end
+        element.name = tagName
+        element.closing = true
+        return element, remaining2
+    end
+    local _, _, name, nameEnder, remaining = str:find('%s*<(%a+)%s*(/?>?)(.*)')
+    if (name == xml.PARENT_ELEMENT_NAME) then
+        error(('Invalid XML Element name; cannot be `%s`'):format(xml.PARENT_ELEMENT_NAME), 2)
+    end
+    if not name then
+        return nil
+    end
+    element.name = name
+    if nameEnder == '>' or nameEnder == '/>' then
+        element.selfClosing = nameEnder == '/>'
+        return element, remaining
+    end
+    while #remaining > 0 do
+        local atrNameEnd, valStart, atrName, nxt = remaining:find('%s*(%a+)%s*=%s*(.)')
+        if not atrNameEnd or not valStart then
+            return nil
+        end
+        remaining = remaining:sub(valStart)
+        if nxt == '"' then
+            local valEnd, breakEnd, valStr, valEnder = remaining:find('%s*"([^"]*)"%s*(/?[,>])%s*')
+            if not valEnd or not breakEnd then
+                return nil
+            end
+            element.attributes[atrName] = valStr
+            element.selfClosing = valEnder == '/>'
+            if valEnder == '>' or valEnder == '/>' then
+                return element, remaining:sub(breakEnd + 1)
+            else
+                remaining = remaining:sub(breakEnd + 1)
+            end
+        else
+            local valEnd, breakEnd, valStr, valEnder = remaining:find('%s*([^,>/]+)%s*(/?[,>])%s*')
+            if not valEnd or not breakEnd then
+                return nil
+            end
+            if valStr == 'true' then
+                element.attributes[atrName] = true
+            elseif valStr == 'false' then
+                element.attributes[atrName] = false
+            else
+                local s = pcall(function() element.attributes[atrName] = tonumber(valStr) end)
+                if not s then
+                    error('Malformed XML, attribute value must be a number, `true`, `false`, or a `"` encapsulated string', 2)
+                end
+            end
+            element.selfClosing = valEnder == '/>'
+            if valEnder == '>' or valEnder == '/>' then
+                return element, remaining:sub(breakEnd + 1)
+            else
+                remaining = remaining:sub(breakEnd + 1)
+            end
+        end
+    end
+    error(("How did we get here? (Contact developer) `%s`, `%s`"):format(str, remaining), 2)
+end
+
+---Create a new XMLElement
+---@param name string? *(Optional)* Name of the XML element
+---@return XMLElement xmlElement New XML element
+function xml.XMLElement(name)
+    local o = {}
+    setmetatable(o, XMLElement_MT) ---@cast o XMLElement
+    o:__init__(name)
+    return o
+end
+
+---Convert an XMLElement to a string
+---@param element XMLElement XML element to convert to a string
+---@return string xmlElement The XML element as a string
+function xml.xmlElementToString(element)
+    local str = ('{ name:"%s", nChildren: %d, attributes:['):format(element.name, #element.children)
+    local fA = true
+    for name in pairs(element.attributes) do
+        if not fA then
+            str = str .. ', '
+        end
+        if type(element.attributes[name]) == 'string' then
+            str = str .. ('%s:"%s"'):format(name, element.attributes[name])
+        else
+            str = str .. ('%s:%s'):format(name, tostring(element.attributes[name]))
+        end
+        fA = false
+    end
+    str = str .. ']'
+    if element.inner then
+        str = str .. (', inner="%s"'):format(element.inner)
+    end
+    if element.closing then
+        str = str .. ', closing'
+    end
+    if element.selfClosing then
+        str = str .. ', selfClosing'
+    end
+    return str .. ' }'
+end
+XMLElement_MT.__tostring = xml.xmlElementToString
+
+return xml

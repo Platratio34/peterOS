@@ -32,6 +32,8 @@
 
         "os/lib/tblStore/init.lua",
 
+        "os/lib/xml/init.lua",
+
         "os/lib/config.lua",
         "os/lib/logger.lua",
 	    "os/lib/strings.lua",
