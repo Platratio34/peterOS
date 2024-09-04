@@ -45,27 +45,17 @@ function XMLElement_MT:__index(index)
     return nil
 end
 
----Checks if matching string is a start
----@param str string String to check in
----@param pattern string Pattern to check for
----@param start number? Location in `str` to checking from
----@return boolean matches If the pattern was found a the start of string or at `start`
-local function matches(str, pattern, start)
-    local s, e = str:find(pattern, start)
-    return s == (start or 1)
-end
-
 ---Parses a string form XML data
 ---@param str string String to parse
 ---@return XMLElement xml Parent XML element
 function xml.parse(str)
     local xmlFile = xml.XMLElement(xml.PARENT_ELEMENT_NAME)
     local cElement = xmlFile ---@type XMLElement
-    while #str > 0 do
-        if matches(str, '%s*<!%-%-') then
+    while #str > 0 and (not str:find('^%s*$')) do
+        if str:find('^%s*<!%-%-') then
             local _, commentEnd = str:find('%-%->')
             str = str:sub(commentEnd + 1)
-        elseif matches(str, '%s*<') then
+        elseif str:find('^%s*<') then
             local element, remaining = xml.parseForElement(str)
             if element then
                 str = remaining --[[@as string]]
@@ -90,7 +80,7 @@ function xml.parse(str)
             end
             str = next
             cElement.inner = inner
-        else
+        elseif not str:find('^%s*$') then
             error(('Malformed XML, found text outside of any element: `%s`...'):format(str:sub(1, 12)), 2)
         end
     end
@@ -106,7 +96,7 @@ end
 ---@return string? recaning String after XML element (string includes respective closing element)
 function xml.parseForElement(str)
     local element = xml.XMLElement()
-    if matches(str, '%s*</(%a+)%s*>') then
+    if str:find('^%s*</(%a+)%s*>') then
         local _, _, tagName, remaining2 = str:find('%s*</(%a+)%s*>(.*)')
         if (tagName == xml.PARENT_ELEMENT_NAME) then
             error(('Invalid XML Element name; cannot be `%s`'):format(xml.PARENT_ELEMENT_NAME), 2)
@@ -127,7 +117,7 @@ function xml.parseForElement(str)
         element.selfClosing = nameEnder == '/>'
         return element, remaining
     end
-    while #remaining > 0 do
+    while #remaining > 0 and (not remaining:find('^^%s*$'))do
         local atrNameEnd, valStart, atrName, nxt = remaining:find('%s*(%a+)%s*=%s*(.)')
         if not atrNameEnd or not valStart then
             return nil
@@ -167,6 +157,7 @@ function xml.parseForElement(str)
                 remaining = remaining:sub(breakEnd + 1)
             end
         end
+        _, _, remaining = remaining:find('%s*(.*)')
     end
     error(("How did we get here? (Contact developer) `%s`, `%s`"):format(str, remaining), 2)
 end

@@ -169,13 +169,12 @@ function loader.load(file)
     if #file < 6 then return nil end
     if file:sub(1, 5) == '<RTML' then
         local rtml = {}
-        local lines = file:split('\n')
-        local _, rtmlOptions = loader.parseTag(lines[1])
-        rtml.header = rtmlOptions or { version = 1 }
+        local rtmlTag = xml.parseForElement(file)
+        rtml.header = rtmlTag.attributes or { version = 1 }
         if rtml.header.version == 1 then
             loadV1(rtml, file)
         else
-            error("Unknown RTML file version. Valid versions: 1", 2)
+            error(("Unknown RTML file version. Valid versions: 1, was %s"):format(textutils.serialise(rtml.header.version)), 2)
         end
         return rtml
     else
