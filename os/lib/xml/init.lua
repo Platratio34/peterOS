@@ -74,7 +74,7 @@ function xml.parse(str)
                 end
             end
         elseif cElement.name ~= xml.PARENT_ELEMENT_NAME then
-            local _, _, inner, next = str:find('([^<]*)(.*)')
+            local _, _, inner, next = str:find('([^<]-)%s*(<.*)')
             if not inner then
                 error(('Malformed XML, element of type %s was never closed at `%s`'):format(cElement.name, str), 2)
             end
@@ -93,7 +93,7 @@ end
 ---Parse a string for the next XML Element
 ---@param str string String to parse
 ---@return XMLElement? xmlElement XML element, if present
----@return string? recaning String after XML element (string includes respective closing element)
+---@return string? remaining String after XML element (string includes respective closing element)
 function xml.parseForElement(str)
     local element = xml.XMLElement()
     if str:find('^%s*</(%a+)%s*>') then
@@ -105,7 +105,7 @@ function xml.parseForElement(str)
         element.closing = true
         return element, remaining2
     end
-    local _, _, name, nameEnder, remaining = str:find('%s*<(%a+)%s*(/?>?)(.*)')
+    local _, _, name, nameEnder, remaining = str:find('%s*<(%a+)%s*(/?>?)%s*(.*)')
     if (name == xml.PARENT_ELEMENT_NAME) then
         error(('Invalid XML Element name; cannot be `%s`'):format(xml.PARENT_ELEMENT_NAME), 2)
     end
@@ -113,6 +113,7 @@ function xml.parseForElement(str)
         return nil
     end
     element.name = name
+    _, _, remaining = remaining:find('(.-)%s*$')
     if nameEnder == '>' or nameEnder == '/>' then
         element.selfClosing = nameEnder == '/>'
         return element, remaining
@@ -124,19 +125,19 @@ function xml.parseForElement(str)
         end
         remaining = remaining:sub(valStart)
         if nxt == '"' then
-            local valEnd, breakEnd, valStr, valEnder = remaining:find('%s*"([^"]*)"%s*(/?[,>])%s*')
+            local valEnd, breakEnd, valStr, valEnder, after = remaining:find('%s*"([^"]*)"%s*(/?[,>])%s*(.*)')
             if not valEnd or not breakEnd then
                 return nil
             end
             element.attributes[atrName] = valStr
             element.selfClosing = valEnder == '/>'
             if valEnder == '>' or valEnder == '/>' then
-                return element, remaining:sub(breakEnd + 1)
+                return element, after
             else
-                remaining = remaining:sub(breakEnd + 1)
+                remaining = after
             end
         else
-            local valEnd, breakEnd, valStr, valEnder = remaining:find('%s*([^,>/]+)%s*(/?[,>])%s*')
+            local valEnd, breakEnd, valStr, valEnder, after = remaining:find('%s*([^,>/]+)%s*(/?[,>])%s*(.*)')
             if not valEnd or not breakEnd then
                 return nil
             end
@@ -152,9 +153,9 @@ function xml.parseForElement(str)
             end
             element.selfClosing = valEnder == '/>'
             if valEnder == '>' or valEnder == '/>' then
-                return element, remaining:sub(breakEnd + 1)
+                return element, after
             else
-                remaining = remaining:sub(breakEnd + 1)
+                remaining = after
             end
         end
         _, _, remaining = remaining:find('%s*(.*)')
