@@ -1,3 +1,5 @@
+---@module 'xml'
+
 local xml = {
     PARENT_ELEMENT_NAME = "_xml_"
 }

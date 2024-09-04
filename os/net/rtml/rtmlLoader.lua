@@ -1,5 +1,7 @@
 ---@module 'os.net.rtml.rtmlLoader'
 
+local xml = pos.require('xml')
+
 pos.require('net.rtml')
 local loader = {}
 
@@ -68,157 +70,94 @@ function loader.parseTag(line)
 end
 
 ---Load rtml from plaintext XML in version 1
----@param lines string[]
+---@param lines string
 local function loadV1(rtml, lines)
-    local lineN = 2
-
-    local parentTree = {{}}
-
-    local inBody = false
-    local cElement = nil ---@type RTMLElement?
+    local parentTree = { {} }
+    
     local nextScreenLine = 1
 
-    local tempText = "" ---@type string?
-    local inTag = false
-
-    local line = lines[lineN]
-    while lineN <= #lines do
-        local _, _, linePre, linePost = line:find('([^<]*)(<.*)')
-        if not linePre then
-            error(('Malformed RTML at line %i, can not parse line'):format(lineN), 2)
-        end
-        if #linePre > 0 and inTag then
-            tempText = tempText .. linePre
-        end
-        line = linePost
-        local tag, attributes, closer, rLine = loader.parseTag(line)
-        if tag == 'body' then
-            if not closer then
-                table.insert(parentTree, rtml)
-            else
-                if not parentTree[#parentTree] == rtml then
-                    error(('Malformed RTML at line %i, unclosed tag'):format(lineN), 2)
+    local inXml = xml.parse(lines) ---@type XMLElement
+    for i=1,#inXml.children do
+        local c1 = inXml.children[i]
+        if c1.name == 'RTML' then
+            -- this was already processed
+        elseif c1.name == 'body' then
+            for j = 1, #c1.children do
+                local c2 = c1.children[j]
+                if c2.name == 'text' then
+                    local el = c2.attributes --[[@as RTMLElement]] or {}
+                    el.type = net.rtml.TYPE_TEXT
+                    if not el.x then
+                        el.x = 1
+                    end
+                    if not el.y then
+                        el.y = nextScreenLine
+                        nextScreenLine = nextScreenLine + 1
+                    else
+                        nextScreenLine = math.max(nextScreenLine, el.y + 1)
+                    end
+                    el.text = c2.inner
+                    table.insert(rtml, el)
+                elseif c2.name == 'link' then
+                    local el = c2.attributes --[[@as RTMLElement]] or {}
+                    el.type = net.rtml.TYPE_LINK
+                    if not el.x then
+                        el.x = 1
+                    end
+                    if not el.y then
+                        el.y = nextScreenLine
+                        nextScreenLine = nextScreenLine + 1
+                    else
+                        nextScreenLine = math.max(nextScreenLine, el.y + 1)
+                    end
+                    el.text = c2.inner
+                    table.insert(rtml, el)
+                elseif c2.name == 'dom-link' then
+                    local el = c2.attributes --[[@as RTMLElement]] or {}
+                    el.type = net.rtml.TYPE_DOM_LINK
+                    if not el.x then
+                        el.x = 1
+                    end
+                    if not el.y then
+                        el.y = nextScreenLine
+                        nextScreenLine = nextScreenLine + 1
+                    else
+                        nextScreenLine = math.max(nextScreenLine, el.y + 1)
+                    end
+                    table.insert(rtml, el)
+                elseif c2.name == 'button' then
+                    local el = c2.attributes --[[@as RTMLElement]] or {}
+                    el.type = net.rtml.TYPE_BUTTON
+                    if not el.x then
+                        el.x = 1
+                    end
+                    if not el.y then
+                        el.y = nextScreenLine
+                        nextScreenLine = nextScreenLine + 1
+                    else
+                        nextScreenLine = math.max(nextScreenLine, el.y + 1)
+                    end
+                    table.insert(rtml, el)
+                elseif c2.name == 'input' then
+                    if not c2.selfClosing then
+                        error('Malformed RTML, `input` tags must be self closing', 2)
+                    end
+                    local el = c2.attributes --[[@as RTMLElement]] or {}
+                    el.type = net.rtml.TYPE_BUTTON
+                    if not el.x then
+                        el.x = 1
+                    end
+                    if not el.y then
+                        el.y = nextScreenLine
+                        nextScreenLine = nextScreenLine + 1
+                    else
+                        nextScreenLine = math.max(nextScreenLine, el.y + 1)
+                    end
+                    table.insert(rtml, el)
                 end
             end
-        elseif tag == 'text' then
-            if not closer then
-                if cElement ~= nil then
-                    error(('Malformed RTML at line %i, unclosed tag'):format(lineN), 2)
-                end
-                cElement = attributes--[[@as RTMLElement]] or {}
-                cElement.type = net.rtml.TYPE_TEXT
-                if not cElement.x then
-                    cElement.x = 1
-                end
-                if not cElement.y then
-                    cElement.y = nextScreenLine
-                    nextScreenLine = nextScreenLine + 1
-                else
-                    nextScreenLine = math.max(nextScreenLine, cElement.y + 1)
-                end
-                inTag = true
-                tempText = ""
-                table.insert(parentTree[#parentTree], cElement)
-            else
-                cElement.text = tempText
-                cElement = nil
-            end
-        elseif tag == 'link' then
-            if not closer then
-                if cElement ~= nil then
-                    error(('Malformed RTML at line %i, unclosed tag'):format(lineN), 2)
-                end
-                cElement = attributes--[[@as RTMLElement]] or {}
-                cElement.type = net.rtml.TYPE_LINK
-                if not cElement.x then
-                    cElement.x = 1
-                end
-                if not cElement.y then
-                    cElement.y = nextScreenLine
-                    nextScreenLine = nextScreenLine + 1
-                else
-                    nextScreenLine = math.max(nextScreenLine, cElement.y + 1)
-                end
-                inTag = true
-                tempText = ""
-                table.insert(parentTree[#parentTree], cElement)
-            else
-                cElement.text = tempText
-                cElement = nil
-            end
-        elseif tag == 'dom-link' then
-            if not closer then
-                if cElement ~= nil then
-                    error(('Malformed RTML at line %i, unclosed tag'):format(lineN), 2)
-                end
-                cElement = attributes--[[@as RTMLElement]] or {}
-                cElement.type = net.rtml.TYPE_DOM_LINK
-                if not cElement.x then
-                    cElement.x = 1
-                end
-                if not cElement.y then
-                    cElement.y = nextScreenLine
-                    nextScreenLine = nextScreenLine + 1
-                else
-                    nextScreenLine = math.max(nextScreenLine, cElement.y + 1)
-                end
-                inTag = true
-                tempText = ""
-                table.insert(parentTree[#parentTree], cElement)
-            else
-                cElement.text = tempText
-                cElement = nil
-            end
-        elseif tag == 'button' then
-            if not closer then
-                if cElement ~= nil then
-                    error(('Malformed RTML at line %i, unclosed tag'):format(lineN), 2)
-                end
-                cElement = attributes--[[@as RTMLElement]] or {}
-                cElement.type = net.rtml.TYPE_BUTTON
-                if not cElement.x then
-                    cElement.x = 1
-                end
-                if not cElement.y then
-                    cElement.y = nextScreenLine
-                    nextScreenLine = nextScreenLine + 1
-                else
-                    nextScreenLine = math.max(nextScreenLine, cElement.y + 1)
-                end
-                inTag = true
-                tempText = ""
-                table.insert(parentTree[#parentTree], cElement)
-            else
-                cElement.text = tempText
-                cElement = nil
-            end
-        elseif tag == 'input' then
-            cElement = attributes--[[@as RTMLElement]] or {}
-            cElement.type = net.rtml.TYPE_BUTTON
-            if not cElement.x then
-                cElement.x = 1
-            end
-            if not cElement.y then
-                cElement.y = nextScreenLine
-                nextScreenLine = nextScreenLine + 1
-            else
-                nextScreenLine = math.max(nextScreenLine, cElement.y + 1)
-            end
-            table.insert(parentTree[#parentTree], cElement)
-            if not closer then
-                error(('Malformed RTML at line %i, `input` tags must be self closing'):format(lineN), 2)
-            end
-        elseif inTag then
-            local _, _, text = line:find('%s*(.*)')
-            tempText = tempText .. text
-        end
-        if rLine and #rLine > 0 then
-            line = rLine
-        elseif lineN >= #lines - 1 then
-            return
         else
-            lineN = lineN + 1
-            line = lines[lineN]
+            error(('Unknown tag `%s`'):format(c1.name), 2)
         end
     end
 end
@@ -234,7 +173,7 @@ function loader.load(file)
         local _, rtmlOptions = loader.parseTag(lines[1])
         rtml.header = rtmlOptions or { version = 1 }
         if rtml.header.version == 1 then
-            loadV1(rtml, lines)
+            loadV1(rtml, file)
         else
             error("Unknown RTML file version. Valid versions: 1", 2)
         end
