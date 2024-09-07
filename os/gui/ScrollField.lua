@@ -46,7 +46,7 @@ function ScrollField:draw(window, windowBuffer)
             el:draw(intWindow, fieldBuffer)
         end
     end
-    windowBuffer:draw(self.x, self.y, fieldBuffer, 1, self.scroll, self.w, self.h + self.scroll)
+    windowBuffer:draw(self.x, self.y, fieldBuffer, 1, self.scroll + 1, self.w, self.h + self.scroll)
 end
 ---Override. Processes <code>mouse_scroll</code> events for the scroll field
 ---@param event table Event table

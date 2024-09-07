@@ -64,7 +64,7 @@ end
 function Window:draw(frameBuffer)
     local windowBuffer = pos.gui.FrameBuffer(self.w, self.h, self.bg)
     -- pos.gui._log:debug('showing window '..self._name)
-    paintutils.drawFilledBox(1 + self.x, 1 + self.y, self.w + self.x, self.h + self.y, self.bg)
+    -- paintutils.drawFilledBox(1 + self.x, 1 + self.y, self.w + self.x, self.h + self.y, self.bg)
     for _, el in pairs(self._elements) do
         if el.visible then
             -- pos.gui._log:debug('drawing '..el.type)
@@ -86,13 +86,13 @@ function Window:draw(frameBuffer)
     -- term.setTextColor(colors.red)
     -- term.setCursorPos(self.w + self.x, 1 + self.y)
     -- term.write('X')
-    windowBuffer:setPixel(self.w, 1, 'X', colors.red)
+    windowBuffer:setPixel(self.w, 1, 'X', colors.red, colors.gray)
 
     for _, mo in pairs(self._menuOptions) do
         mo:draw(self, windowBuffer)
     end
     -- pos.gui._log:debug('done rendering window '..self._name)
-    frameBuffer:draw(self.x, self.y, windowBuffer)
+    frameBuffer:draw(self.x + 1, self.y + 1, windowBuffer)
 end
 ---Process event for window
 ---@param event table Event table

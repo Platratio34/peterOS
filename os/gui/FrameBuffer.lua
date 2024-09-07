@@ -60,7 +60,7 @@ function _G.pos.gui.FrameBuffer(width, height, solid, map)
             end
         end
     end
-    setmetatable(o, { __index = FrameBuffer })
+    setmetatable(o, FrameBufferMT)
     return o
 end
 
@@ -72,20 +72,14 @@ function FrameBuffer:clear(color)
     end
     color = color or 'f'
     for y = 1, self.height do
-        self.text[y] = {}
-        self.textColor[y] = {}
-        self.backColor[y] = {}
         for x = 1, self.width do
-            if color then
-                self.text[y][x] = ' '
-                self.textColor[y][x] = 'f'
-                self.backColor[y][x] = color
-            else
-                self.text[y][x] = ''
-                self.textColor[y][x] = ' '
-                self.backColor[y][x] = ' '
-            end
+            self.text[y][x] = ' '
+            self.textColor[y][x] = 'f'
+            self.backColor[y][x] = color
         end
+        self.__rowCache[1][y] = nil
+        self.__rowCache[2][y] = nil
+        self.__rowCache[3][y] = nil
     end
 end
 
@@ -505,11 +499,11 @@ end
 ---@param x number
 ---@param y number
 ---@param buffer FrameBuffer
----@param x1 number?
----@param y1 number?
+---@param xOff number?
+---@param yOff number?
 ---@param x2 number?
 ---@param y2 number?
-function FrameBuffer:draw(x, y, buffer, x1, y1, x2, y2)
+function FrameBuffer:draw(x, y, buffer, xOff, yOff, x2, y2)
     expect(1, x, 'number')
     expect(2, y, 'number')
     expect(3, buffer, 'FrameBuffer')
@@ -519,22 +513,22 @@ function FrameBuffer:draw(x, y, buffer, x1, y1, x2, y2)
         return
     end
 
-    x1 = (x1 or 1) - 1
-    y1 = (y1 or 1) - 1
+    xOff = (xOff or 1) - 1
+    yOff = (yOff or 1) - 1
     x2 = x2 or buffer.width
     y2 = y2 or buffer.height
-    local minX = math.max(x + x1, 1)
+    local minX = math.max(x, 1)
     local maxX = math.min(x + x2, self.width)
-    local minY = math.max(y + y1, 1)
+    local minY = math.max(y, 1)
     local maxY = math.min(y + y2, self.height)
     
-    for i=minY,maxY do
-        for j = minX, maxX do
-            local t, tC, bC = buffer:sample(j - x + 1, i - y + 1)---@type string?, string?, string?
+    for py=minY,maxY do
+        for px = minX, maxX do
+            local t, tC, bC = buffer:sample(px - x + 1 + xOff, py - y + yOff + 1)---@type string?, string?, string?
             if t == '' then t = nil end
             if tC == ' ' then tC = nil end
             if bC == ' ' then bC = nil end
-            self:setPixel(i, j, t, tC, bC)
+            self:setPixel(px, py, t, tC, bC)
         end
     end
 end

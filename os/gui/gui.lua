@@ -1,5 +1,4 @@
 local expect = require "cc.expect"
-dofile('/os/gui/FrameBuffer.lua')
 
 local log = pos.Logger('/home/.pgmLog/pos.gui.log')
 log:info('Starting GUI')
@@ -18,6 +17,8 @@ end
 
 ---PeterOS Graphical User Interface package
 _G.pos.gui = gui
+
+dofile('/os/gui/FrameBuffer.lua')
 
 ---Collection of meta tables
 ---@type table

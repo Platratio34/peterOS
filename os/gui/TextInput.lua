@@ -75,11 +75,11 @@ function TextInput:draw(window, windowBuffer)
     for i, ln in pairs(self._lines) do
         if pos.gui.inWindowRel(window, self.x, self.y + i - 1, self.w, 1) then
             -- pos.gui._log:info(i..','..(self.y + window.y + i - 1)..' | '..ln)
-            windowBuffer:drawRectFilled(self.bg, self.x + self.y + i - 1, self.x + self.w - 1, self.y + self.h - 1)
+            windowBuffer:drawRectFilled(self.bg, self.x, self.y + i - 1, self.x + self.w - 1, self.y + self.h - 1)
             if self.hideText then
-                self:write(self.x, self.y + i - 1, ('*'):rep(#ln), self.fg)
+                windowBuffer:write(self.x, self.y + i - 1, ('*'):rep(#ln), self.fg)
             else
-                self:write(self.x, self.y + i - 1, ln, self.fg)
+                windowBuffer:write(self.x, self.y + i - 1, ln, self.fg)
             end
             lx, ly = self.x + window.x + ln:len(), self.y + window.y + i - 1
         end
@@ -93,7 +93,7 @@ end
 ---@param window Window The window the input is processed in
 function TextInput:process(event, window)
     if event[1] == 'mouse_click' then
-        local _, _, x, y = table.unpack(event)
+        local _, _, x, y = unpack(event)
         x = x - window.x
         y = y - window.y
         if x >= self.x and x < self.x + self.w and y == self.y then
