@@ -1,4 +1,5 @@
 local expect = require "cc.expect"
+dofile('/os/gui/FrameBuffer.lua')
 
 local log = pos.Logger('/home/.pgmLog/pos.gui.log')
 log:info('Starting GUI')
@@ -85,6 +86,9 @@ _gui.windowOrder = {} ---@type number[]
 
 _gui.focusedWindow = -1 ---@type number
 
+_gui.w, _gui.h = term.getSize()
+_gui.frameBuffer = pos.gui.FrameBuffer(_gui.w, _gui.h, true)
+
 ---Add a window to gui system
 ---@param window Window Window (from Window())
 ---@return integer id Window id
@@ -132,8 +136,7 @@ end
 
 ---INTERNAL | Redraws all windows in system
 function gui.redrawWindows()
-    term.setBackgroundColor(colors.black)
-    term.clear()
+    _gui.frameBuffer:clear()
     -- for i, window in pairs(_gui.windows) do
     --     log:debug('w '..i)
     --     if window.visible then
@@ -147,9 +150,16 @@ function gui.redrawWindows()
         local window = _gui.windows[wIndex]
         log:debug('w ' .. wIndex .. ' ' .. tostring(window.visible))
         if window.visible then
-            window:draw()
+            window:draw(_gui.frameBuffer)
         end
     end
+
+    for i = 1, _gui.frameBuffer.height do
+        local t, tC, bC = _gui.frameBuffer:render(i)
+        term.setCursorPos(1, i)
+        term.blit(t, tC, bC)
+    end
+
     if _gui.cursor.active then
         term.setTextColor(_gui.cursor.color)
         term.setCursorPos(_gui.cursor.x, _gui.cursor.y)
@@ -241,9 +251,6 @@ function gui.run(func)
                 table.insert(_gui.lError, e)
             end
         end
-        term.setBackgroundColor(colors.black)
-        term.setTextColor(colors.white)
-        term.clear()
         s, e = pcall(gui.redrawWindows)
         if not s then
             gui.running = false

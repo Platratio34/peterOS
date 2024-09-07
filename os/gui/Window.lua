@@ -60,13 +60,15 @@ function Window:hide()
 end
 
 ---Draw window
-function Window:draw()
+---@param frameBuffer FrameBuffer
+function Window:draw(frameBuffer)
+    local windowBuffer = pos.gui.FrameBuffer(self.w, self.h, self.bg)
     -- pos.gui._log:debug('showing window '..self._name)
     paintutils.drawFilledBox(1 + self.x, 1 + self.y, self.w + self.x, self.h + self.y, self.bg)
     for _, el in pairs(self._elements) do
         if el.visible then
             -- pos.gui._log:debug('drawing '..el.type)
-            el:draw(self)
+            el:draw(self, windowBuffer)
             -- if el.type == 'button' then
             --     pos.gui._log:debug('+drawing btn '..el.text)
             -- end
@@ -74,19 +76,23 @@ function Window:draw()
     end
     term.setBackgroundColor(colors.gray)
     if not self.hideNameBar then
-        paintutils.drawFilledBox(1 + self.x, 1 + self.y, self.w + self.x, 1 + self.y, colors.gray)
-        term.setTextColor(colors.white)
-        term.setCursorPos(self._nameOffset + self.x, 1 + self.y)
-        term.write(self._name)
+        windowBuffer:drawRectFilled(colors.gray, 1, 1, self.w, 1)
+        -- paintutils.drawFilledBox(1 + self.x, 1 + self.y, self.w + self.x, 1 + self.y, colors.gray)
+        -- term.setTextColor(colors.white)
+        -- term.setCursorPos(self._nameOffset + self.x, 1 + self.y)
+        -- term.write(self._name)
+        windowBuffer:write(self._nameOffset, 1, self._name, colors.white)
     end
-    term.setTextColor(colors.red)
-    term.setCursorPos(self.w + self.x, 1 + self.y)
-    term.write('X')
+    -- term.setTextColor(colors.red)
+    -- term.setCursorPos(self.w + self.x, 1 + self.y)
+    -- term.write('X')
+    windowBuffer:setPixel(self.w, 1, 'X', colors.red)
 
     for _, mo in pairs(self._menuOptions) do
-        mo:draw(self)
+        mo:draw(self, windowBuffer)
     end
     -- pos.gui._log:debug('done rendering window '..self._name)
+    frameBuffer:draw(self.x, self.y, windowBuffer)
 end
 ---Process event for window
 ---@param event table Event table

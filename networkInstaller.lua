@@ -40,8 +40,10 @@ end
 local newVersion = "master"
 if fs.exists('/osBranch') then
     local f = fs.open('/osBranch', 'r')
-    newVersion = f.readAll();
-    f.close()
+    if f then
+        newVersion = f.readAll();
+        f.close()
+    end
 end
 
 local cB = '?cb='..os.epoch('utc') % 60000
@@ -232,8 +234,10 @@ if os.getComputerLabel() == nil then
 end
 
 local branchFile = fs.open('/osBranch', 'w')
-f.write(newVersion)
-f.close()
+if branchFile then
+    branchFile.write(newVersion)
+    branchFile.close()
+end
 
 print("")
 print("OS downloaded, ready for reboot")

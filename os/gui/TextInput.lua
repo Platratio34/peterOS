@@ -65,25 +65,21 @@ end
 
 ---Override. Draws the input box and text
 ---@param window Window The window the input is drawn in
-function TextInput:draw(window)
+---@param windowBuffer FrameBuffer
+function TextInput:draw(window, windowBuffer)
     if not pos.gui.inWindowRel(window, self.x, self.y, self.w, 1) then return end
-    paintutils.drawFilledBox(self.x + window.x, self.y + window.y, self.x + self.w - 1 + window.x, self.y + window.y,
-        self.bg)
-    term.setBackgroundColor(self.bg)
-    term.setTextColor(self.fg)
+    windowBuffer:drawRectFilled(self.bg, self.x, self.y, self.x + self.w - 1, self.y + self.h - 1)
     -- term.setCursorPos(self.x + window.x, self.y + window.y)
     -- term.write(self.text)
     local lx, ly = self.x + window.x, self.y + window.y
     for i, ln in pairs(self._lines) do
         if pos.gui.inWindowRel(window, self.x, self.y + i - 1, self.w, 1) then
             -- pos.gui._log:info(i..','..(self.y + window.y + i - 1)..' | '..ln)
-            paintutils.drawFilledBox(self.x + window.x, self.y + window.y + i - 1, self.x + self.w - 1 + window.x,
-                self.y + window.y + i - 1, self.bg)
-            term.setCursorPos(self.x + window.x, self.y + window.y + i - 1)
+            windowBuffer:drawRectFilled(self.bg, self.x + self.y + i - 1, self.x + self.w - 1, self.y + self.h - 1)
             if self.hideText then
-                term.write(string.rep('*', string.len(ln)))
+                self:write(self.x, self.y + i - 1, ('*'):rep(#ln), self.fg)
             else
-                term.write(ln)
+                self:write(self.x, self.y + i - 1, ln, self.fg)
             end
             lx, ly = self.x + window.x + ln:len(), self.y + window.y + i - 1
         end

@@ -23,7 +23,8 @@ local UiElement = {
 }
 ---Abstract. Draws the UiElement
 ---@param window Window The window the element will be drawn in
-function UiElement:draw(window) end
+---@param windowBuffer FrameBuffer
+function UiElement:draw(window, windowBuffer) end
 ---Abstract. Processes and event for the element
 ---@param event table Event table
 ---@param window Window the window the element is being processed in

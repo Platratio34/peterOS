@@ -36,15 +36,12 @@ end
 
 ---Override. Draws the button
 ---@param window Window Window to draw the button in
-function Button:draw(window)
+---@param windowBuffer FrameBuffer
+function Button:draw(window, windowBuffer)
     -- pos.gui._log:debug('- showing btn '..self.text)
     if not pos.gui.inWindowRel(window, self.x, self.y, self.w, self.h) then return end
-    paintutils.drawFilledBox(self.x + window.x, self.y + window.y, self.x + self.w - 1 + window.x,
-        self.y + self.h - 1 + window.y, self.bg)
-    term.setBackgroundColor(self.bg)
-    term.setTextColor(self.fg)
-    term.setCursorPos(self.x + window.x, self.y + window.y)
-    term.write(self.text)
+    windowBuffer:drawRectFilled(self.bg, self.x, self.y, self.x + self.w - 1, self.y + self.h - 1)
+    windowBuffer:write(self.x, self.y, self.text, self.fg)
 end
 ---Override. Processes <code>mouse_click</code> events for the button
 ---@param event table Event table

@@ -1,3 +1,34 @@
+---Parameter type expect
+---@param aI integer
+---@param val any
+---@param ... string
+function _G.expect(aI, val, ...)
+    local aType = type(val)
+    if aType == 'table' then
+        if getmetatable(val) and getmetatable(val).type then
+            aType = getmetatable(val).type
+        end
+    end
+    local reqTypes = { ... }
+    if #reqTypes == 1 then
+        if aType ~= reqTypes[1] then
+            error(('Argument %s must be a %s, was %s'):format(aI, reqTypes[1], aType), 3)
+        end
+    end
+    local typesString = ''
+    for i = 1, #reqTypes do
+        if aType == reqTypes[i] then
+            return
+        else
+            if #typesString > 0 then
+                typesString = typesString .. ', '
+            end
+            typesString = typesString .. reqTypes[i]
+        end
+    end
+    error(('Argument %s must be one of %s, was %s'):format(aI, typesString, aType), 3)
+end
+
 shell.run("/os/net/init.lua")
 shell.run("/os/gui/gui.lua")
 

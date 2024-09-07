@@ -61,15 +61,13 @@ function TextBox:getText()
 end
 ---Override. Draws the text
 ---@param window Window Window to draw the text in
-function TextBox:draw(window)
-    term.setBackgroundColor(self.bg)
-    term.setTextColor(self.fg)
+---@param windowBuffer FrameBuffer
+function TextBox:draw(window, windowBuffer)
     for i, ln in pairs(self._lines) do
         if pos.gui.inWindowRel(window, self.x, self.y + i - 1, self.w, 1) then
             -- pos.gui._log:info(i..','..(self.y + window.y + i - 1)..' | '..ln)
-            paintutils.drawFilledBox(self.x + window.x, self.y + window.y + i - 1, self.x + self.w - 1 + window.x, self.y + window.y + i - 1, self.bg)
-            term.setCursorPos(self.x + window.x, self.y + window.y + i - 1)
-            term.write(ln)
+            windowBuffer:drawRectFilled(self.bg, self.x, self.y, self.x + self.w - 1, self.y + self.h - 1)
+            windowBuffer:write(self.x, self.y + i - 1, ln, self.fg)
         end
     end
 end

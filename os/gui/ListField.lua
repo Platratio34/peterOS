@@ -27,25 +27,31 @@ end
 
 ---Override. Draws the list field and all sub elements
 ---@param window Window Window the list field is drawn in
-function ListField:draw(window)
+---@param windowBuffer FrameBuffer
+function ListField:draw(window, windowBuffer)
     local intWindow = {
         x = window.x + self.x - 1,
         y = window.y + self.y - 1 - self.scroll,
         w = self.w,
         h = self.h,
     }
-    paintutils.drawFilledBox(window.x + self.x, window.y + self.y, self.w + window.x + self.x - 1, self.h + window.y + self.y - 1, self.bg)
     local y = 1
+    local height = self.h
+    for _, el in pairs(self._elements) do
+        height = math.max(height, el.y + el.h - 1)
+    end
+    local listBuffer = pos.gui.FrameBuffer(self.w, height, self.bg)
     for i = 0, self.__elementIndex do
         local el = self._elements[i]
         if el and el.visible then
             el.y = y
             if not ((el.y + el.h - 1 <= self.scroll) or (el.y > self.h + self.scroll --[[ and el.y + el.h - 1 > self.h + self.scroll]])) then
-                el:draw(intWindow)
+                el:draw(intWindow, listBuffer)
             end
             y = y + el.h
         end
     end
+    windowBuffer:draw(self.x, self.y, listBuffer, 1, self.scroll, self.w, self.h + self.scroll)
 end
 ---Override. Processes <code>mouse_scroll</code> events for the list field
 ---@param event table Event table

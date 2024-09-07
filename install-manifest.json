@@ -39,6 +39,11 @@
 	    "os/lib/strings.lua",
         "os/lib/string.lua",
         
+        "os/lib/math/init.lua",
+        "os/lib/math/Vector2.lua",
+        "os/lib/math/Vector3.lua",
+        "os/lib/math/Matrix3x3.lua",
+        
         "os/lib/classes/Logger.lua",
         "os/lib/classes/Config.lua",
         "os/lib/classes/Parser.lua",
@@ -63,6 +68,7 @@
         "os/user/RemoteUser.lua",
         
         "os/gui/gui.lua",
+        "os/gui/FrameBuffer.lua",
         "os/gui/Window.lua",
         "os/gui/UiElement.lua",
         "os/gui/TextBox.lua",

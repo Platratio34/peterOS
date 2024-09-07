@@ -27,20 +27,26 @@ end
 
 ---Override. Draws the scroll field and all sub elements
 ---@param window Window Window the scroll field is drawn in
-function ScrollField:draw(window)
+---@param windowBuffer FrameBuffer+
+function ScrollField:draw(window, windowBuffer)
     local intWindow = {
         x = window.x + self.x - 1,
         y = window.y + self.y - 1 - self.scroll,
         w = self.w,
         h = self.h,
     }
-    paintutils.drawFilledBox(window.x + self.x, window.y + self.y, self.w + window.x + self.x - 1, self.h + window.y + self.y - 1, self.bg)
+    local height = self.h
+    for _, el in pairs(self._elements) do
+        height = math.max(height, el.y + el.h - 1)
+    end
+    local fieldBuffer = pos.gui.FrameBuffer(self.w, height, self.bg)
     for i, el in pairs(self._elements) do
         if el.visible and not ((el.y + el.h - 1 <= self.scroll) or (el.y > self.h + self.scroll --[[ and el.y + el.h - 1 > self.h + self.scroll]])) then
             -- pos.gui._log:info(i)
-            el:draw(intWindow)
+            el:draw(intWindow, fieldBuffer)
         end
     end
+    windowBuffer:draw(self.x, self.y, fieldBuffer, 1, self.scroll, self.w, self.h + self.scroll)
 end
 ---Override. Processes <code>mouse_scroll</code> events for the scroll field
 ---@param event table Event table

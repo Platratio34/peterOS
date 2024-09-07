@@ -31,17 +31,13 @@ end
 
 ---Override. Draws the option menu
 ---@param window Window Window the option menu is drawn in
-function MenuOption:draw(window)
-    term.setBackgroundColor(colors.gray)
-    term.setTextColor(colors.lightGray)
-    term.setCursorPos(self.x + window.x, 1 + window.y)
-    term.write(self.name)
+---@param windowBuffer FrameBuffer
+function MenuOption:draw(window, windowBuffer)
+    windowBuffer:write(self.x, 1, self.name, colors.lightGray, self.gray)
     if self.visible then
-        paintutils.drawFilledBox(self.x + window.x, 2 + window.y, self.x + self.w - 1 + window.x,
-            1 + #self.options + window.y)
+        windowBuffer:drawRectFilled(colors.gray, self.x, 2, self.x + self.w - 1, 1 + #self.options)
         for i, opt in pairs(self.options) do
-            term.setCursorPos(self.x + window.x, 1 + i + window.y)
-            term.write(opt)
+            windowBuffer:write(self.x, 1 + i, opt, colors.lightGray)
         end
     end
 end
