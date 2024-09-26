@@ -66,5 +66,11 @@ end
 function Queue:clear()
     self.__arr = {}
     self.__first = 0
-    self.__last = -1 
+    self.__last = -1
+end
+
+---Check if the queue is empty
+---@return boolean empty
+function Queue:empty()
+    return self:size() == 0
 end
