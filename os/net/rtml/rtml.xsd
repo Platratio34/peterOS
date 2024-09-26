@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="RTML">
+        <xs:complexType>
+            <xs:attribute name="version" type="xs:decimal" use="required" />
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="body">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="text">
+                    <xs:complexType>
+                        <xs:attribute name="x" type="xs:decimal" />
+                        <xs:attribute name="y" type="xs:decimal" />
+                        <xs:attribute name="color" type="xs:string" />
+                        <xs:attribute name="bgColor" type="xs:string" />
+                        <xs:attribute name="id" type="xs:string" />
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="link">
+                    <xs:complexType>
+                        <xs:attribute name="x" type="xs:decimal" />
+                        <xs:attribute name="y" type="xs:decimal" />
+                        <xs:attribute name="color" type="xs:string" />
+                        <xs:attribute name="bgColor" type="xs:string" />
+                        <xs:attribute name="id" type="xs:string" />
+                        <xs:attribute name="href" type="xs:string" />
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="dom-link">
+                    <xs:complexType>
+                        <xs:attribute name="x" type="xs:decimal" />
+                        <xs:attribute name="y" type="xs:decimal" />
+                        <xs:attribute name="color" type="xs:string" />
+                        <xs:attribute name="bgColor" type="xs:string" />
+                        <xs:attribute name="id" type="xs:string" />
+                        <xs:attribute name="href" type="xs:string" />
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="input">
+                    <xs:complexType>
+                        <xs:attribute name="x" type="xs:decimal" />
+                        <xs:attribute name="y" type="xs:decimal" />
+                        <xs:attribute name="color" type="xs:string" />
+                        <xs:attribute name="bgColor" type="xs:string" />
+                        <xs:attribute name="id" type="xs:string" />
+                        <xs:attribute name="name" type="xs:string" use="required" />
+                        <xs:attribute name="len" type="xs:decimal" use="required" />
+                        <xs:attribute name="hide" type="xs:boolean" />
+                        <xs:attribute name="next" type="xs:string" />
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="button">
+                    <xs:complexType>
+                        <xs:attribute name="x" type="xs:decimal" />
+                        <xs:attribute name="y" type="xs:decimal" />
+                        <xs:attribute name="color" type="xs:string" />
+                        <xs:attribute name="bgColor" type="xs:string" />
+                        <xs:attribute name="id" type="xs:string" />
+                        <xs:attribute name="action" type="xs:string" use="required" />
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
