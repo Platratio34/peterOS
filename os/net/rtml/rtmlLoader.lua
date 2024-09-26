@@ -1,9 +1,22 @@
 ---@module 'os.net.rtml.rtmlLoader'
 
-local xml = pos.require('xml')
+local xml = pos.require('xml') ---@module 'xml'
 
 pos.require('net.rtml')
 local loader = {}
+
+local RTML_V1_SCHEMA
+local function loadSchemas()
+    local v1F = fs.open('/os/net/rtml/rtml_v1.json')
+    if v1F then
+        local v1S = textutils.unserialiseJSON(v1F.readAll())
+        v1F.close()
+        RTML_V1_SCHEMA = xml.XMLSchema.parse(v1S)
+    else
+        RTML_V1_SCHEMA = xml.XMLSchema.new()
+    end
+end
+loadSchemas()
 
 ---Load an RTML file by filename
 ---@param filename string Path to file to load and parse
@@ -70,18 +83,26 @@ function loader.parseTag(line)
 end
 
 ---Load rtml from plaintext XML in version 1
----@param lines string
-local function loadV1(rtml, lines)
+---@param rtml RTMLElement[]
+---@param inXml XMLElement
+local function loadV1(rtml, inXml)
+    local v, e = inXml:fix(RTML_V1_SCHEMA)
+    if not v then
+        error('Invalid RTML: '..e, 3)
+    end
     local parentTree = { {} }
     
     local nextScreenLine = 1
 
-    local inXml = xml.parse(lines) ---@type XMLElement
     for i=1,#inXml.children do
         local c1 = inXml.children[i]
         if c1.name == 'RTML' then
             -- this was already processed
-        elseif c1.name == 'body' then
+            if #c1.children == 1 and c1.children[1].name == 'body' then
+                c1 = c1.children[1]
+            end
+        end
+        if c1.name == 'body' then
             for j = 1, #c1.children do
                 local c2 = c1.children[j]
                 if c2.name == 'text' then
@@ -140,7 +161,7 @@ local function loadV1(rtml, lines)
                     table.insert(rtml, el)
                 elseif c2.name == 'input' then
                     if not c2.selfClosing then
-                        error('Malformed RTML, `input` tags must be self closing', 2)
+                        error('Malformed RTML, `input` tags must be self closing', 3)
                     end
                     local el = c2.attributes --[[@as RTMLElement]] or {}
                     el.type = net.rtml.TYPE_BUTTON
@@ -156,8 +177,6 @@ local function loadV1(rtml, lines)
                     table.insert(rtml, el)
                 end
             end
-        else
-            error(('Unknown tag `%s`'):format(c1.name), 2)
         end
     end
 end
@@ -167,12 +186,13 @@ end
 ---@return table? rtml RTML as lua object OR `nil` if it could not be parsed
 function loader.load(file)
     if #file < 6 then return nil end
-    if file:sub(1, 5) == '<RTML' then
+    if file:sub(1, 5) == '<RTML' or file:find('^%s*<%?xml') then
+        local xmlFile = xml.parse(file) ---@type XMLElement
         local rtml = {}
-        local rtmlTag = xml.parseForElement(file)
+        local rtmlTag = xmlFile[1]
         rtml.header = rtmlTag.attributes or { version = 1 }
         if rtml.header.version == 1 then
-            loadV1(rtml, file)
+            loadV1(rtml, xmlFile)
         else
             error(("Unknown RTML file version. Valid versions: 1, was %s"):format(textutils.serialise(rtml.header.version)), 2)
         end

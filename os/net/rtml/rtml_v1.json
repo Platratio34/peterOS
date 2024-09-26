@@ -1,0 +1,16 @@
+{
+    "RTML": { "version": "number" },
+    "body": {},
+    "rtmlElement": {
+        "x": "number?",
+        "y": "number?",
+        "color": "string?",
+        "bgColor": "number?",
+        "id": "string?"
+    },
+    "text": "rtmlElement",
+    "link": [ "rtmlElement", { "href": "string" } ],
+    "dom-link": "link",
+    "input": [ "rtmlElement", { "len": "number", "hide":"boolean?", "next": "string?" } ],
+    "button": [ "rtmlElement", { "action": "string" } ]
+}

@@ -1,7 +1,7 @@
 ---@module 'xml'
-
 local xml = {
-    PARENT_ELEMENT_NAME = "_xml_"
+    PARENT_ELEMENT_NAME = "_xml_",
+    XMLSchema = dofile('schema.lua') ---@type XMLSchema
 }
 
 ---@class XMLElement XML element
@@ -45,12 +45,27 @@ function XMLElement_MT:__index(index)
     return nil
 end
 
----Parses a string form XML data
+---Parses a string for XML data
 ---@param str string String to parse
 ---@return XMLElement xml Parent XML element
 function xml.parse(str)
     local xmlFile = xml.XMLElement(xml.PARENT_ELEMENT_NAME)
     local cElement = xmlFile ---@type XMLElement
+    if str:find('^%s*<%?xml') then
+        local _, headerEnd = str:find('%?>')
+        if not headerEnd then
+            error('Malformed XML: `xml` element opened but never closed', 2)
+        end
+        local _, versionEnd, version = str:find('%s+version="([^"]*)"%s*')
+        if versionEnd and versionEnd < headerEnd then
+            xmlFile.attributes['version'] = version
+        end
+        local _, encodingEnd, encoding = str:find('%s+encoding="([^"]*)"%s*')
+        if encodingEnd and encodingEnd < headerEnd then
+            xmlFile.attributes['encoding'] = encoding
+        end
+        str = str:sub(headerEnd+1)
+    end
     while #str > 0 and (not str:find('^%s*$')) do
         if str:find('^%s*<!%-%-') then
             local _, commentEnd = str:find('%-%->')
@@ -125,7 +140,7 @@ function xml.parseForElement(str)
         end
         remaining = remaining:sub(valStart)
         if nxt == '"' then
-            local valEnd, breakEnd, valStr, valEnder, after = remaining:find('%s*"([^"]*)"%s*(/?[,>])%s*(.*)')
+            local valEnd, breakEnd, valStr, valEnder, after = remaining:find('%s*"([^"]*)",?%s*(/?>?)%s*(.*)')
             if not valEnd or not breakEnd then
                 return nil
             end
@@ -137,7 +152,7 @@ function xml.parseForElement(str)
                 remaining = after
             end
         else
-            local valEnd, breakEnd, valStr, valEnder, after = remaining:find('%s*([^,>/]+)%s*(/?[,>])%s*(.*)')
+            local valEnd, breakEnd, valStr, valEnder, after = remaining:find('%s*([^%s/>,]+),?%s*(/?>?)%s*(.*)')
             if not valEnd or not breakEnd then
                 return nil
             end
@@ -161,6 +176,42 @@ function xml.parseForElement(str)
         _, _, remaining = remaining:find('%s*(.*)')
     end
     error(("How did we get here? (Contact developer) `%s`, `%s`"):format(str, remaining), 2)
+end
+
+---Check if this element (and all children) are valid according to the provided schema
+---@param schema XMLSchema The schema to check with
+---@return boolean valid If the element and children where valid
+---@return string error Schema error **OR** `''`
+function XMLElement:verify(schema)
+    local v, e = schema:checkElement(self)
+    if not v then
+        return v, e
+    end
+    for _, el in pairs(self.children) do
+        v, e = el:verify(schema)
+        if not v then
+            return v, e
+        end
+    end
+    return true, ''
+end
+
+---Fixes this element (and all children) according to the provided schema
+---@param schema XMLSchema The schema to check with
+---@return boolean valid If the element and children where valid
+---@return string error Schema error **OR** `''`
+function XMLElement:fix(schema)
+    local v, e = schema:checkElementAndFix(self)
+    if not v then
+        return v, e
+    end
+    for _, el in pairs(self.children) do
+        v, e = el:fix(schema)
+        if not v then
+            return v, e
+        end
+    end
+    return true, ''
 end
 
 ---Create a new XMLElement

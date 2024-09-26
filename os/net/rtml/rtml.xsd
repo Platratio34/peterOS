@@ -1,66 +1,96 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-    <xs:element name="RTML">
-        <xs:complexType>
-            <xs:attribute name="version" type="xs:decimal" use="required" />
-        </xs:complexType>
-    </xs:element>
+    <xs:simpleType name="lua.color">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="white" />
+            <xs:enumeration value="orange" />
+            <xs:enumeration value="magenta" />
+            <xs:enumeration value="lightBlue" />
+            <xs:enumeration value="yellow" />
+            <xs:enumeration value="lime" />
+            <xs:enumeration value="pink" />
+            <xs:enumeration value="gray" />
+            <xs:enumeration value="lightGray" />
+            <xs:enumeration value="cyan" />
+            <xs:enumeration value="purple" />
+            <xs:enumeration value="blue" />
+            <xs:enumeration value="brown" />
+            <xs:enumeration value="green" />
+            <xs:enumeration value="red" />
+            <xs:enumeration value="black" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="rtml.button.action">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="SUBMIT" />
+            <xs:enumeration value="PUSH" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:attributeGroup name="rtml.element">
+        <xs:attribute name="x" type="xs:positiveInteger" use="optional" />
+        <xs:attribute name="y" type="xs:positiveInteger" use="optional" />
+        <xs:attribute name="color" type="lua.color" use="optional" />
+        <xs:attribute name="bgColor" type="lua.color" use="optional" />
+        <xs:attribute name="id" type="xs:string" use="optional" />
+    </xs:attributeGroup>
+
+    <xs:complexType name="rtml.element">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attributeGroup ref="rtml.element" />
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="rtml.link">
+        <xs:simpleContent>
+            <xs:extension base="rtml.element">
+                <xs:attribute name="href" type="xs:string" use="required" />
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="rtml.input">
+        <xs:simpleContent>
+            <xs:extension base="rtml.element">
+                <xs:attribute name="name" type="xs:string" use="required" />
+                <xs:attribute name="len" type="xs:positiveInteger" use="required" />
+                <xs:attribute name="hide" type="xs:boolean" use="optional" />
+                <xs:attribute name="next" type="xs:string" use="optional" />
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="rtml.button">
+        <xs:simpleContent>
+            <xs:extension base="rtml.element">
+                <xs:attribute name="action" type="rtml.button.action" use="required" />
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:element name="rtmlElement" type="rtml.element" />
+    <xs:element name="text" type="rtml.element" substitutionGroup="rtmlElement" />
+    <xs:element name="link" type="rtml.link" substitutionGroup="rtmlElement" />
+    <xs:element name="dom-link" type="rtml.link" substitutionGroup="rtmlElement" />
+    <xs:element name="input" type="rtml.input" substitutionGroup="rtmlElement" />
+    <xs:element name="button" type="rtml.button" substitutionGroup="rtmlElement" />
+
     <xs:element name="body">
         <xs:complexType>
-            <xs:sequence>
-                <xs:element name="text">
-                    <xs:complexType>
-                        <xs:attribute name="x" type="xs:decimal" />
-                        <xs:attribute name="y" type="xs:decimal" />
-                        <xs:attribute name="color" type="xs:string" />
-                        <xs:attribute name="bgColor" type="xs:string" />
-                        <xs:attribute name="id" type="xs:string" />
-                    </xs:complexType>
-                </xs:element>
-                <xs:element name="link">
-                    <xs:complexType>
-                        <xs:attribute name="x" type="xs:decimal" />
-                        <xs:attribute name="y" type="xs:decimal" />
-                        <xs:attribute name="color" type="xs:string" />
-                        <xs:attribute name="bgColor" type="xs:string" />
-                        <xs:attribute name="id" type="xs:string" />
-                        <xs:attribute name="href" type="xs:string" />
-                    </xs:complexType>
-                </xs:element>
-                <xs:element name="dom-link">
-                    <xs:complexType>
-                        <xs:attribute name="x" type="xs:decimal" />
-                        <xs:attribute name="y" type="xs:decimal" />
-                        <xs:attribute name="color" type="xs:string" />
-                        <xs:attribute name="bgColor" type="xs:string" />
-                        <xs:attribute name="id" type="xs:string" />
-                        <xs:attribute name="href" type="xs:string" />
-                    </xs:complexType>
-                </xs:element>
-                <xs:element name="input">
-                    <xs:complexType>
-                        <xs:attribute name="x" type="xs:decimal" />
-                        <xs:attribute name="y" type="xs:decimal" />
-                        <xs:attribute name="color" type="xs:string" />
-                        <xs:attribute name="bgColor" type="xs:string" />
-                        <xs:attribute name="id" type="xs:string" />
-                        <xs:attribute name="name" type="xs:string" use="required" />
-                        <xs:attribute name="len" type="xs:decimal" use="required" />
-                        <xs:attribute name="hide" type="xs:boolean" />
-                        <xs:attribute name="next" type="xs:string" />
-                    </xs:complexType>
-                </xs:element>
-                <xs:element name="button">
-                    <xs:complexType>
-                        <xs:attribute name="x" type="xs:decimal" />
-                        <xs:attribute name="y" type="xs:decimal" />
-                        <xs:attribute name="color" type="xs:string" />
-                        <xs:attribute name="bgColor" type="xs:string" />
-                        <xs:attribute name="id" type="xs:string" />
-                        <xs:attribute name="action" type="xs:string" use="required" />
-                    </xs:complexType>
-                </xs:element>
-            </xs:sequence>
+            <xs:choice>
+                <xs:element ref="rtmlElement" maxOccurs="unbounded"/>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="RTML">
+        <xs:complexType>
+            <xs:all>
+                <xs:element ref="body" />
+            </xs:all>
+            <xs:attribute name="version" type="xs:string" fixed="1" />
         </xs:complexType>
     </xs:element>
 </xs:schema>

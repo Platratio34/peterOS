@@ -33,6 +33,7 @@
         "os/lib/tblStore/init.lua",
 
         "os/lib/xml/init.lua",
+        "os/lib/xml/schema.lua",
 
         "os/lib/config.lua",
         "os/lib/logger.lua",
@@ -57,12 +58,14 @@
         "os/net/cmd.lua",
         "os/net/socket.lua",
         "os/net/cert.lua",
+        "os/net/NetInterface.lua",
         
         "os/net/rttp/init.lua",
         "os/net/rttp/simpleServer.lua",
         
         "os/net/rtml/init.lua",
         "os/net/rtml/rtmlLoader.lua",
+        "os/net/rtml/rtml_v1.json",
 
         "os/user/LocalUser.lua",
         "os/user/RemoteUser.lua",
