@@ -93,10 +93,11 @@ local RTMLContext = {
 }
 
 ---Create a new RTML context (equivalent to a window)
+---@param elements RTMLElement[]? Elements to include in the context
 ---@return RTMLContext context
-function rtml.createContext()
+function rtml.createContext(elements)
     local context = {
-        elements = {}
+        elements = elements or {}
     }
     setmetatable(context, { __index = RTMLContext })
     return context
