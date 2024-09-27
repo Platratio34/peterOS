@@ -39,6 +39,7 @@ local NetInterfaceMT = {
 ---@field respondToPing boolean
 ---@field hostname string?
 ---@field originHostname string?
+---@field receiveAll boolean?
 
 local interfaceNumber = 0
 local msgId = os.epoch('utc') ---@type number
@@ -396,6 +397,9 @@ function NetInterface:validMsg(port, msg)
         return true
     end
     if msg.dest == "hw:" .. self.__hwAddress then -- Hardware Address
+        return true
+    end
+    if self.__config.receiveAll then
         return true
     end
     return false
