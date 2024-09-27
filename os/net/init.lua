@@ -657,6 +657,19 @@ net.splitUrl = function(url)
     return protocol, domain, path
 end
 
+---Get an origin string for given message
+---@param msg NetMessage
+---@return string origin
+function net.getOriginString(msg)
+    local origin = msg.origin .. ''
+    if msg.header.originDomain then
+        origin = msg.header.originDomain --[[@as string]]
+    elseif msg.header.conId then
+        origin = origin .. ':' .. msg.header.conId
+    end
+    return origin
+end
+
 ---Sets if the net module should log all messages
 ---@param vb boolean If all messages should be logged
 ---@deprecated
