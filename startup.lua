@@ -350,7 +350,7 @@ function pos.version()
     if not vf then
         return 'Unknown'
     end
-    version = vf.readLine()
+    version = vf.readLine() --[[@as string]]
     vf.close()
     return version
 end
@@ -401,11 +401,15 @@ end
 
 ---Change the current user
 ---@param name string New username
----@param pass string? New user password
+---@param pass? string New user password
 ---@return boolean changed
 function user.changeUser(name, pass)
     if name == '' then
         cUser = nil
+        return true
+    end
+    if(pass == nil) then
+        error("Parameter `pass` must be non-nil for user other than `''`",2)
     end
     local u = getUserData(name)
     if not u then
@@ -452,23 +456,31 @@ end
 local requireLogin = false
 local loginAsSu = true
 if fs.exists('/user.cfg') then
-    local f = fs.open('/user.cfg', 'r')
-    local userCfg = textutils.unserialiseJSON(f.readAll())
-    f.close()
-    if userCfg.requireLogin ~= nil then
-        requireLogin = userCfg.requireLogin
-        internal.blockTerminate = true
-    end
-    if userCfg.loginSU ~= nil then
-        loginAsSu = userCfg.loginSU
+    local f, e = fs.open('/user.cfg', 'r')
+    if f then
+        local userCfg = textutils.unserialiseJSON(f.readAll())
+        f.close()
+        if userCfg.requireLogin ~= nil then
+            requireLogin = userCfg.requireLogin
+            internal.blockTerminate = true
+        end
+        if userCfg.loginSU ~= nil then
+            loginAsSu = userCfg.loginSU
+        end
+    else
+        printError("Error reading user config: "..e)
     end
 else
-    local f = osFs.open('/user.cfg', 'w')
-    f.write(textutils.serialiseJSON({
-        requireLogin = false,
-        loginSU = true,
-    }))
-    f.close()
+    local f, e = osFs.open('/user.cfg', 'w')
+    if f then
+        f.write(textutils.serialiseJSON({
+            requireLogin = false,
+            loginSU = true,
+        }))
+        f.close()
+    else
+        printError("Error creating user config: "..e)
+    end
 end
 
 local function loginLoop()

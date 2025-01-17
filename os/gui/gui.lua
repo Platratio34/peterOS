@@ -3,8 +3,6 @@ local expect = require "cc.expect"
 local log = pos.Logger('/home/.pgmLog/pos.gui.log')
 log:info('Starting GUI')
 
----@alias color number
-
 local gui = {}
 gui._log = log
 log:setLevel(pos.LoggerLevel.INFO)

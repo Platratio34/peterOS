@@ -14,10 +14,10 @@ _G.pos.LoggerLevel = LoggerLevel
 ---@class Logger Basic to file logger
 ---@field path string Log file path (Read Only)
 ---@field private __level LoggerLevel Log level (`DEBUG`-`NONE`)
----@field private __file Handle|nil File write handle
+---@field private __file fs.WriteHandle|nil File write handle
 ---@field print boolean If the logger should also print to the shell
 ---@field logTime boolean If time should be included in the log
----@field private __errorFile Handle|nil Error file write handle
+---@field private __errorFile fs.WriteHandle|nil Error file write handle
 local Logger = {
     path = '/home/.pgmLog/',
     __level = LoggerLevel.DEBUG,
@@ -63,8 +63,7 @@ function Logger:__init__(path, printToConsole, copyOld)
         end
         fs.copy(path, oldPath)
     end
-    self.__file = fs.open(path, 'w')
-    -- self.errorFile = errorFile or false
+    self.__file = fs.open(path, 'w') --[[@as fs.WriteHandle]]
 end
 
 ---Checks if the file is currently open for writing
@@ -82,7 +81,7 @@ function Logger:setPath(path)
         self.__file.close()
     end
     self.path = path
-    self.__file = fs.open(path, 'w')
+    self.__file = fs.open(path, 'w') --[[@as fs.WriteHandle]]
 end
 
 ---Sets the logging severity level

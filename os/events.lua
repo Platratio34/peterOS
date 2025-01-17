@@ -33,6 +33,7 @@ local function pullEventRaw(sFilter)
 end
 os.pullEventRaw = pullEventRaw
 
+---@diagnostic disable-next-line: duplicate-set-field
 os.pullEvent = function(sFilter)
     local event = { os.pullEventRaw(sFilter) }
     if event[1] == "terminate" and not osInternal.blockTerminate then
