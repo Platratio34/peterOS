@@ -114,19 +114,15 @@ function TextInput:process(event, window)
     end
     if event[1] == 'char' then
         local _, char = table.unpack(event)
-        -- self.text = self.
         if string.len(self.text) < (self.w * self.h) then
             self:setText(self.text .. char)
         end
     elseif event[1] == 'key' then
         local _, key, hold = table.unpack(event)
-        -- pos.gui._log:info(key)
         if key == keys.backspace then
-            -- pos.gui._log:info('bakcspace '..self.text)
             if string.len(self.text) > 0 then
                 self:setText(self.text:sub(1, -2))
             end
-            -- pos.gui._log:info('after '..self.text)
         elseif key == keys.enter or key == keys.numPadEnter then
             if self.submitable then
                 if not hold then
@@ -156,8 +152,8 @@ end
 
 ---Create a text input box
 ---@constructor TextInput
----@param x number X coord
----@param y number Y coord
+---@param x number X location
+---@param y number Y location
 ---@param w number Width
 ---@param background color|nil Background color
 ---@param foreground color|nil Text color

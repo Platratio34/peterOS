@@ -122,6 +122,7 @@ local function waitForMsg()
     while cont do
         local event = { os.pullEvent() }
         if event[1] == "modem_message" then
+            ---@cast event ModemMessageEvent
             local _, side, port, _, message, _ = table.unpack(event)
             cont = check(side, port, message)
             if not cont then
@@ -316,6 +317,7 @@ local function pullEventRaw(sFilter)
     while true do
         local event = { osPullEventRaw() }
         if event[1] == 'modem_message' then
+            ---@cast event ModemMessageEvent
             local _, side, port, _, message, _ = table.unpack(event)
             if not check(side, port, message) then 
                 ---@cast message NetMessage

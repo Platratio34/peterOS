@@ -1,6 +1,5 @@
 local rttp = pos.require("rttp.base")
 local rttps = pos.require("rttps.base")
--- local rsa = pos.require("rsa")
 local ecc = pos.require("ecc")
 
 local appdata = "/home/.appdata/rttps/"
@@ -29,8 +28,8 @@ end
 local function setup(side) 
     if isSetup then return false end
     -- modem = peripheral.find("modem") or error("No Modem Attached", 0)
-    local modems = { peripheral.find("modem", function(name, modem)
-        return modem.isWireless()
+    local modems = { peripheral.find("modem", function(name, mdm)
+        return mdm.isWireless()
     end) }
     if #modems == 0 then
         error("No Modem Attached", 0)
@@ -43,7 +42,6 @@ local function setup(side)
     local pbKF = fs.open(appdata .. "public.key", "r")
     if prKF == nil or pbKF == nil then
         print("Missing key files, generating new ones")
-        -- publicKey, privateKey = rsa.keygen.generateKeyPair()
         publicKey, privateKey = ecc.keypair(ecc.random.random());
         prKF = fs.open(appdata .. "private.key", "w")
         pbKF = fs.open(appdata .. "public.key", "w")
@@ -70,7 +68,9 @@ local function getIsSetup()
 end
 
 local function close()
-    modem.close(80)
+    if modem then
+        modem.close(80)
+    end
     isSetup = false
 end
 
@@ -83,6 +83,8 @@ local function waitForMsgInt(host)
         local event = { os.pullEvent() }
         if event[1] == "modem_message" then
             local eName, side, channel, replyChannel, message, distance = unpack(event)
+            ---@diagnostic disable-next-line: cast-type-mismatch
+            ---@cast message table
             if channel == 80 then
                 if debug then
                     debugMsg("recived msg:")
@@ -121,7 +123,7 @@ local function waitForMsgInt(host)
         end
     until msg
     waiting = false
-    return msg
+    return msg --[[@as table]]
 end
 local function waitForMsg()
     return waitForMsgInt(false)

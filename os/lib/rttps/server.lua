@@ -26,8 +26,8 @@ end
 local function setup(host)
     if isSetup then return false end
     -- modem = peripheral.find("modem") or error("No Modem Attached", 0)
-    local modems = { peripheral.find("modem", function(name, modem)
-        return modem.isWireless()
+    local modems = { peripheral.find("modem", function(name, mdm)
+        return mdm.isWireless()
     end) }
     if #modems == 0 then
         error("No Modem Attached", 0)
@@ -65,7 +65,7 @@ local function setup(host)
 end
 
 local function close()
-    modem.close(80)
+    if(modem) then modem.close(80) end
     isSetup = false
 end
 
@@ -80,6 +80,7 @@ local function waitForMsg()
     debugMsg("waiting for msg")
     repeat
         local event, side, channel, replyChannel, message, distance = os.pullEvent("modem_message")
+        ---@cast message table
         if channel == 80 then
             if debug then
                 debugMsg("recived msg:")
@@ -106,6 +107,7 @@ local function waitForMsg()
             end
         end
     until msg
+    ---@cast msg table
     msg.body = rttps.decrypt(msg.body)
     return msg
 end

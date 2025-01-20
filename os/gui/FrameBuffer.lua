@@ -16,7 +16,7 @@ local FrameBufferMT = {
 ---Create a new Frame Buffered
 ---@param width integer Width of buffer
 ---@param height integer Height of buffer
----@param solid boolean|string|number|nil If the frame buffer should initialize solid or transparent, or the color to fill with
+---@param solid boolean|string|color|nil If the frame buffer should initialize solid or transparent, or the color to fill with
 ---@param map string[][]? Row/Column color map to initialize from
 ---@return FrameBuffer frameBuffer
 function _G.pos.gui.FrameBuffer(width, height, solid, map)
@@ -65,10 +65,10 @@ function _G.pos.gui.FrameBuffer(width, height, solid, map)
 end
 
 ---Clear the frame buffer and reset all color / text
----@param color string|number|nil
+---@param color string|color|nil
 function FrameBuffer:clear(color)
     if type(color) == "number" then
-        color = colors.toBlit(color)
+        color = colors.toBlit(color) ---@cast color string
     end
     color = color or 'f'
     for y = 1, self.height do
@@ -87,16 +87,18 @@ end
 ---@param x integer|Vector2 X position
 ---@param y integer? Y position
 ---@param text string? Character to draw at pixel
----@param textColor string? Color of character of pixel
----@param backColor string? Background color of pixel
+---@param textColor string|color|nil Color of character of pixel
+---@param backColor string|color|nil Background color of pixel
 ---@return boolean changed If the pixel changed
 function FrameBuffer:setPixel(x, y, text, textColor, backColor)
     expect(1, x, 'number', 'Vector2')
     expect(3, text, 'nil', 'string')
     expect(4, textColor, 'nil', 'string', 'number')
     if type(textColor) == 'number' then textColor = colors.toBlit(textColor) end
+    ---@cast textColor string?
     expect(5, backColor, 'nil', 'string', 'number')
     if type(backColor) == 'number' then backColor = colors.toBlit(backColor) end
+    ---@cast backColor string?
     if Vector2.isValid(x) then
         y = x.y
         x = x.x
@@ -138,8 +140,8 @@ end
 ---@param x integer|Vector2 X position
 ---@param y integer? Y position
 ---@param text string Text to write
----@param textColor string|number|nil Color of text
----@param backColor string|number|nil Background color
+---@param textColor string|color|nil Color of text
+---@param backColor string|color|nil Background color
 function FrameBuffer:write(x, y, text, textColor, backColor)
     expect(1, x, 'number', 'Vector2')
     if Vector2.isValid(x) then
@@ -180,7 +182,7 @@ local function correctCords(x1, y1, x2, y2)
 end
 
 ---Draw a line
----@param color string|number C color
+---@param color string|color Line color
 ---@param x1 number|Vector2
 ---@param y1 number|Vector2
 ---@param x2 number
@@ -260,7 +262,7 @@ function FrameBuffer:drawLine(color, x1, y1, x2, y2)
 end
 
 ---Draw a rectangle
----@param color string|number Color
+---@param color string|color Color
 ---@param x1 number|Vector2
 ---@param y1 number|Vector2
 ---@param x2 number
@@ -303,7 +305,7 @@ function FrameBuffer:drawRect(color, x1, y1, x2, y2)
 end
 
 ---Draw a filled rectangle
----@param color string|number Color
+---@param color string|color Color
 ---@param x1 number|Vector2
 ---@param y1 number|Vector2
 ---@param x2 number
@@ -343,7 +345,7 @@ function FrameBuffer:drawRectFilled(color, x1, y1, x2, y2)
 end
 
 ---Draw a polygon
----@param color string|number Color
+---@param color string|color Color
 ---@param points Vector2[] List of vertices
 function FrameBuffer:drawPolygon(color, points)
     expect(1, color, 'string', 'number')
@@ -383,7 +385,7 @@ local function isInPoly(x, y, points)
 end
 
 ---Draw a filled polygon
----@param color string|number Color
+---@param color string|color Color
 ---@param points Vector2[] List of vertices
 function FrameBuffer:drawPolygonFilled(color, points)
     expect(1, color, 'string', 'number')

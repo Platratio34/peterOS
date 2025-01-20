@@ -119,20 +119,8 @@ local function display(msg)
     term.setBackgroundColor(colors.black)
 end
 
--- local function splitURL(url)
---     local ind = string.find(url, "/")
---     local d, p = "", ""
---     if ind==nil then
---         d = url
---     else
---         d = string.sub(url, 1, ind-1)
---         p = string.sub(url, ind, -1)
---     end
---     return d, p
--- end
-
 local function keyToChar(key)
-    if string.len(keys.getName(key))==1 then
+    if string.len(keys.getName(key) --[[@as string]])==1 then
         return keys.getName(key)
     elseif key == keys.period then
         return "."
@@ -187,8 +175,6 @@ else
     editURL = true
 end
 
--- print("Seding request to "..domain.." "..path)
-
 while true do
     local msg = pos.require("os.bin.rttpBrowse-home")
     if not (domain == "") then
@@ -200,8 +186,6 @@ while true do
     end
 
     if msg == nil then
-        -- print("Somthing went wrong")
-        -- return
         msg = {
             header={contentType="table/rtml"},
             body={
@@ -211,8 +195,6 @@ while true do
     end
 
     if msg == "timeout" then
-        -- print("Somthing went wrong")
-        -- return
         msg = {
             header={contentType="table/rtml"},
             body={
@@ -283,8 +265,8 @@ while true do
                     end
                 end
             elseif event[1]=="key" then
-                local eventN, key, hold = unpack(event)
-                local kN = keys.getName(key)
+                local eventN, key, hold = table.unpack(event)
+                local kN = keys.getName(key --[[@as number]])
                 if editURL then
                     if key == keys.backspace then
                         url = string.sub(url, 1, -2)

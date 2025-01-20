@@ -7,11 +7,12 @@ local home = {
     }
 }
 
--- os.loadAPI("home/appdata/browser/bookmarks.lua")
--- local bkms = pos.require("home.appdata.browser.bookmarks")
 local f = fs.open("home/appdata/browser/bookmarks.lua", "r")
-local bkms = textutils.unserialise(f.readAll())
-f.close()
+local bkms = {}
+if f then
+    bkms = textutils.unserialise(f.readAll())
+    f.close()
+end
 
 local x, y = 1, 1
 print(#bkms)

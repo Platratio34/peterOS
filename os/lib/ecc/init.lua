@@ -992,7 +992,7 @@ local modp = (function()
         return result
     end
 
-    -- Montgomery REDC algorithn
+    -- Montgomery REDC algorithm
     -- Reduces a number from [0, p^2 - 1] to [0, p - 1]
     local function REDC(T)
         local m = mult(T, pInverse, true)
@@ -1103,7 +1103,7 @@ local modq = (function()
         return setmetatable(result, modQMT)
     end
 
-    -- Montgomery REDC algorithn
+    -- Montgomery REDC algorithm
     -- Reduces a number from [0, q^2 - 1] to [0, q - 1]
     local function REDC(T)
         local m = {unpack(mult({unpack(T, 1, 7)}, qInverse, true), 1, 7)}

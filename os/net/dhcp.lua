@@ -262,10 +262,10 @@ local function rttpMsgHandler(msg)
                     sessionTokens[origin] = token
                 end
                 rttp.reply(msg, rttp.responseCodes.movedTemporarily, 'text/plain', "Valid Login",
-                    { redirect = '/panel', cookies = { ['dnsToken'] = token.token } })
+                    { type = 'rttp', redirect = '/panel', cookies = { ['dnsToken'] = token.token } })
             else
                 rttp.reply(msg, rttp.responseCodes.movedTemporarily, 'text/plain', "Invalid Login",
-                    { redirect = '/loginfailed', cookies = { ['dnsToken'] = '' } })
+                    { type = 'rttp', redirect = '/loginfailed', cookies = { ['dnsToken'] = '' } })
             end
             return
         end
@@ -300,7 +300,7 @@ local function rttpMsgHandler(msg)
         elseif path == '/logout' then
             sessionTokens[origin] = nil
             rttp.reply(msg, rttp.responseCodes.movedTemporarily, 'text/plain', "Logging out",
-                { redirect = '/', cookies = { ['dnsToken'] = '' } })
+                { type = 'rttp', redirect = '/', cookies = { ['dnsToken'] = '' } })
         end
     end
 
@@ -309,12 +309,12 @@ local function rttpMsgHandler(msg)
         token = msg.header.cookies['dnsToken']
     end
     if not sessionTokens[origin] or sessionTokens[origin].token ~= token then
-        rttp.reply(msg, rttp.responseCodes.movedTemporarily, 'text/plain', 'Login first', { redirect = '/loginfirst', cookies = { ['dnsToken'] = '' } })
+        rttp.reply(msg, rttp.responseCodes.movedTemporarily, 'text/plain', 'Login first', { type = 'rttp', redirect = '/loginfirst', cookies = { ['dnsToken'] = '' } })
         return
     end
     if sessionTokens[origin].time < os.epoch('utc') then
         sessionTokens[origin] = nil
-        rttp.reply(msg, rttp.responseCodes.movedTemporarily, 'text/plain', 'Token expired', { redirect = '/loginfirst', cookies = { ['dnsToken'] = '' } })
+        rttp.reply(msg, rttp.responseCodes.movedTemporarily, 'text/plain', 'Token expired', { type = 'rttp', redirect = '/loginfirst', cookies = { ['dnsToken'] = '' } })
         return
     end
     sessionTokens[origin].time = os.epoch('utc') + sessionTokenTime
@@ -339,7 +339,7 @@ local function rttpMsgHandler(msg)
                 dns[recordName] = record
                 saveDns()
                 rttp.reply(msg, rttp.responseCodes.movedTemporarily, 'text/plain', "Record Added",
-                    { redirect = '..' })
+                    { type = 'rttp', redirect = '..' })
                 return
             end
         elseif path == '/panel/dns/remove' then
@@ -348,7 +348,7 @@ local function rttpMsgHandler(msg)
                 dns[msg.body.id] = nil
                 saveDns()
                 rttp.reply(msg, rttp.responseCodes.movedTemporarily, 'text/plain', "Record Removed",
-                    { redirect = '' })
+                    { type = 'rttp', redirect = '' })
                 return
             end
         end

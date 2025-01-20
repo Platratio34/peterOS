@@ -56,22 +56,17 @@ function ScrollField:process(event, window)
         local _, dir, x, y = table.unpack(event)
         x = x - window.x
         y = y - window.y
-        -- pos.gui._log:debug('thinging')
         if pos.gui.inBox(window, self.x, self.y, self.w, self.h, x, y) then
             self.scroll = self.scroll + dir
             local max = 0
             for _, el in pairs(self._elements) do
-                -- pos.gui._log:debug(el.y + el.h - 1)
                 max = math.max(max, el.y + el.h - 1)
             end
-            -- log:debug(max)
             max = math.max(0, max - self.h)
-            -- log:debug(max)
             if self.scroll < 0 then
                 self.scroll = 0
             elseif self.scroll > max then
                 self.scroll = max
-                -- pos.gui._log:debug('scroll max '..max)
             end
         end
     end
@@ -116,8 +111,8 @@ end
 
 ---Creates a scrollable field
 ---@constructor ScrollField
----@param x number X coord
----@param y number Y Coord
+---@param x number X location
+---@param y number Y location
 ---@param w number Width
 ---@param h number Height
 ---@return ScrollField scrollField

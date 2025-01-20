@@ -15,7 +15,7 @@ local MenuOption = {
 }
 setmetatable(MenuOption, { __index = pos.gui.mt.UiElement })
 
----Initilizses the option menu
+---Initializes the option menu
 ---@param x number X position
 ---@param name string Menu name
 ---@param options string[] Option names

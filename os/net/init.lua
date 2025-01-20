@@ -158,7 +158,7 @@ end
 
 ---Get a modem on side, and add network functions
 ---@param side string Side of computer: <code>front</code>, <code>back</code>, <code>left</code>, <code>right</code>, <code>top</code>, <code>bottom</code>
----@return table|nil modem Modem handle
+---@return ModemPeripheral|nil modem Modem handle
 ---@deprecated
 net.getModem = function(side)
     error('Deprecated function, use NetInterfaces instead', 2)
@@ -210,7 +210,7 @@ net.isSetup = function()
     return defaultInterface and defaultInterface:getIp() ~= nil
 end
 ---Gets the currently used modem
----@return table|nil modem Current primary modem
+---@return ModemPeripheral|nil modem Current primary modem
 ---@deprecated
 net.getCModem = function()
     return defaultInterface:getModem()
@@ -223,7 +223,7 @@ end
 
 local msgHandlerId = -1
 ---Setup the network module, returns false on a failure
----@param mdm? table Primary modem (optional)
+---@param mdm? ModemPeripheral Primary modem (optional)
 ---@param ip? number Numeric IP address (optional)
 ---@return boolean setup If the module is not setup
 net.setup = function(mdm, ip)

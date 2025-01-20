@@ -1,7 +1,7 @@
 ---@class NetInterface
 ---@field package __id number
 ---@field name string
----@field private __modem table
+---@field private __modem ModemPeripheral
 ---@field private __modemSide string
 ---@field private __log Logger
 ---@field private __ip number?
@@ -47,7 +47,7 @@ local msgId = os.epoch('utc') ---@type number
 local HW_ADDRESS_PATH = '/hw.addr'
 
 ---@param name string?
----@param modem table|string|nil
+---@param modem ModemPeripheral|string|nil
 ---@param ip string|number|nil
 ---@param hwAddress string?
 ---@return NetInterface interface
@@ -62,7 +62,7 @@ end
 
 ---@package
 ---@param name string?
----@param modem table|string|nil
+---@param modem ModemPeripheral|string|nil
 ---@param ip string|number|nil
 ---@param hwAddress string?
 function NetInterface:__init__(name, modem, ip, hwAddress)
@@ -73,7 +73,7 @@ function NetInterface:__init__(name, modem, ip, hwAddress)
     if modem == nil then
         local modems = { peripheral.find("modem", function(_, test)
             return test.isWireless()
-        end) }
+        end) } ---@cast modems ModemPeripheral[]
         if #modems == 0 then
             modems = { peripheral.find("modem") }
             if #modems == 0 then
@@ -82,7 +82,6 @@ function NetInterface:__init__(name, modem, ip, hwAddress)
             end
         end
         modem = modems[1]
-        ---@cast modem table
     elseif type(modem) == 'string' then
         local side = modem
         modem = peripheral.wrap(side)
@@ -90,10 +89,10 @@ function NetInterface:__init__(name, modem, ip, hwAddress)
             self.log:error('Not modem attached to side %s', side)
             error(('Not modem attached to side %s'):format(side), 3)
         end
-        ---@cast modem table
+        ---@cast modem ModemPeripheral
     end
     self.__modemSide = peripheral.getName(modem)
-    self.__modem = modem
+    self.__modem = modem --[[@as ModemPeripheral]]
 
     if hwAddress then
         self.__hwAddress = hwAddress
@@ -735,7 +734,7 @@ function NetInterface:getHostname()
 end
 
 ---Get the modem this interface uses
----@return table modem
+---@return ModemPeripheral modem
 function NetInterface:getModem()
     return self.__modem
 end

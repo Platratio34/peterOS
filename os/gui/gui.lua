@@ -121,8 +121,8 @@ _gui.cursor = {
     color = colors.white,
 }
 ---Set the cursor position and if it should be blinking
----@param x number X coord
----@param y number Y coord
+---@param x number X location
+---@param y number Y location
 ---@param active boolean Cursor blink
 ---@param color number Cursor color
 function gui.setCursor(x,y,active,color)
@@ -199,7 +199,7 @@ function gui.focusWindow(window)
     end
     table.insert(_gui.windowOrder, 1, window)
 end
----Unfocus window
+---Un-focus window
 ---@param window Window|number  window or window index
 function gui.unfocusWindow(window)
     if type(window) == 'table' then

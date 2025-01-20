@@ -75,8 +75,8 @@ end
 
 ---Creates a text box
 ---@constructor TextBox
----@param x number X coord
----@param y number Y coord
+---@param x number X location
+---@param y number Y location
 ---@param background color|nil Background color
 ---@param foreground color|nil Text color
 ---@param text string Text

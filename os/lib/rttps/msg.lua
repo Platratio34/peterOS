@@ -4,7 +4,7 @@ local msg = {
     host = "" or 0, -- hostname or ID
     path = "", -- path at host
     method = "", -- ["GET", "PUSH"]
-    code = 0, -- [ 200="Okay", 404="Page Not Found", ... ] standatd http/https response codes
+    code = 0, -- [ 200="Okay", 404="Page Not Found", ... ] standard http/https response codes
     body = { -- message body
         shared = 0, -- shared key
         data = "", -- encrypted body
@@ -12,7 +12,7 @@ local msg = {
     header = {}, 
 }
 
-local c_data = { -- unecrypted body
+local c_data = { -- unencrypted body
     rttpsClientKey = {}, -- clients public key object (need for all requests)
     ... -- other data
 }

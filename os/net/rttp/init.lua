@@ -138,7 +138,7 @@ rttp.responseCodes = {
     upgradeRequired = 426, -- Request must be performed with encrypted messages
     internalServerError = 500, -- Server encountered an internal error processing the request
     notImplemented = 501, -- The request is not yet implemented
-    serviceUnavailable = 503, -- The requested service is not ready to handel the request
+    serviceUnavailable = 503, -- The requested service is not ready to handle the request
 }
 
 ---Get the name of a response code by number

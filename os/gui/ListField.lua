@@ -116,8 +116,8 @@ end
 
 ---Creates a scrollable list field
 ---@constructor ListField
----@param x number X coord
----@param y number Y Coord
+---@param x number X location
+---@param y number Y location
 ---@param w number Width
 ---@param h number Height
 ---@return ListField listField

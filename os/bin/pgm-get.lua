@@ -1,6 +1,4 @@
 ---@diagnostic disable
---local str = pos.require("strings")
---local tblStore = pos.require("tblStore")
 
 local args = {...}
 
@@ -83,15 +81,6 @@ local function updateManifest()
 end
 
 local function install(pgm)
-    -- local resp, fMsg = http.get("peter.crall.family/minecraft/cc/pgm-get/"..pgm..".lua")
-    -- if fMsg == nil or resp == nil then
-    --     return false
-    -- end
-
-    -- if not(resp.getResponseCode() == 200) then
-    --     return false
-    -- end
-
     local manifest = loadF(manifestPathFile, false)
     local prgmData = getPrgmData(manifest, pgm)
 
@@ -152,13 +141,7 @@ local function install(pgm)
         table.insert(pgms, pgmListData)
     end
     saveF("/os/pgms.json", pgms, false)
-
-    -- local f = fs.open("/os/bin/"..pgm..".lua", "w")
-    -- f.write(resp.readAll())
-    -- f.close()
-    -- shell.setAlias(pgm, "os/bin/"..pgm..".lua")
-
-    -- return setAC(pgm)
+    
     return true
 end
 
@@ -193,32 +176,6 @@ local function upgrade(force)
     end
     return
 end
-
--- local function list()
---     local pgms = tblStore.loadF("/os/pgms.lua")
---     for i=1,#pgms do
---         print(pgms[i].name.." version "..pgms[i].version)
---     end
--- end
-
--- function setAC(pgm)
---     local resp, fMsg = http.get("peter.crall.family/minecraft/cc/pgm-get/"..pgm.."-complete.lua")
---     if fMsg == nil or resp == nil then
---         return false
---     end
-
---     if not(resp.getResponseCode() == 200) then
---         return false
---     end
-
---     local f = fs.open("/os/bin/"..pgm.."-conplete.lua", "w")
---     f.write(resp.readAll())
---     f.close()
-    
---     shell.setCompletionFunction("/os/bin/"..pgm..".lua", require(".os.bin."..pgm.."-complete").complete)
-
---     return true
--- end
 
 if #args == 1 then
     if args[1] == "update" then
