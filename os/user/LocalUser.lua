@@ -1,6 +1,6 @@
 ---@class LocalUser pOS User object
----@field perm nil|{string: boolean} **FILE ONLY** permission dictionary
----@field protected _perm {string: boolean} User permissions
+---@field perm nil|{ [string]: boolean } **FILE ONLY** permission dictionary
+---@field protected _perm { [string]: boolean } User permissions
 ---@field name string User name
 ---@field pswH string Hashed password (SHA-256)
 local LocalUser = {
@@ -47,7 +47,7 @@ end
 ---Initialize a new LocalUser
 ---@param name string Username
 ---@param pass string Plain-text password
----@param perm {string: boolean} Permission tree
+---@param perm { [string]: boolean } Permission tree
 ---@package
 function LocalUser:__init__(name, pass, perm)
     self.name = name

@@ -4,7 +4,7 @@ local require = args[2]
 local osInternal = args[3]
 local expect = require("cc.expect")
 
-local eventHandlers = {} ---@type table<number, EventHandler>
+local eventHandlers = {} ---@type { [integer]: EventHandler }
 local eventHandlerId = 0
 
 local osPullEventRaw = os.pullEventRaw

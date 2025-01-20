@@ -1,12 +1,12 @@
 ---@class XMLSchema
----@field elements { string: XMLSchema.Element }
+---@field elements { [string]: XMLSchema.Element }
 local XMLSchema = {}
 local XMLSchemaMT = {
     __index = XMLSchema
 }
 
 ---@class XMLSchema.Element
----@field attributes { string: XMLSchema.Attribute } Table of valid attributes
+---@field attributes { [string]: XMLSchema.Attribute } Table of valid attributes
 ---@field parent string? Name of element this element inherits from
 
 ---@class XMLSchema.Attribute
@@ -20,14 +20,14 @@ function XMLSchema.parse(schemaObj)
     local schema = XMLSchema.new()
 
     for name, element in pairs(schemaObj) do
-        local attributes = {} ---@type { string: XMLSchema.Attribute }
+        local attributes = {} ---@type { [string]: XMLSchema.Attribute }
         local parent = nil
         if #element >= 1 then
             parent = element[1]
             element = element[2]
         end
         if element and type(element) == 'table' then
-            ---@cast element { string: string }
+            ---@cast element { [string]: string }
             for atrName, atrType in pairs(element) do
                 attributes[atrName] = XMLSchema.makeAttribute(atrType)
             end
@@ -55,7 +55,7 @@ end
 
 ---Add an element to this schema
 ---@param name string
----@param attributes { string: XMLSchema.Attribute }
+---@param attributes { [string]: XMLSchema.Attribute }
 ---@param parent string?
 function XMLSchema:addElement(name, attributes, parent)
     self.elements[name] = {

@@ -256,7 +256,7 @@ end
 ---@field originSocketId nil|number Origin NAT socket ID
 ---@field destSocketId nil|number Destination NAT socket ID
 
-local namedSockets = {} ---@type table<string, NetSocket> Table of named sockets
+local namedSockets = {} ---@type { [string]: NetSocket } Table of named sockets
 
 ---Returns if a socket with name exists
 ---@param name string socket name

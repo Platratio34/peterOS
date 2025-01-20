@@ -33,7 +33,7 @@ end
 ---@param window Window Window the option menu is drawn in
 ---@param windowBuffer FrameBuffer
 function MenuOption:draw(window, windowBuffer)
-    windowBuffer:write(self.x, 1, self.name, colors.lightGray, self.gray)
+    windowBuffer:write(self.x, 1, self.name, colors.lightGray, colors.gray)
     if self.visible then
         windowBuffer:drawRectFilled(colors.gray, self.x, 2, self.x + self.w - 1, 1 + #self.options)
         for i, opt in pairs(self.options) do

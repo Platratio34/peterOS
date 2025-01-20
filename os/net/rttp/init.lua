@@ -85,10 +85,10 @@ rttp.reply = function(msg, code, contentType, body, head)
         head = {}
     end
     head.type = "rttp"
-    head.method = msg.method
+    head.method = msg.header.method
     head.contentType = contentType
     head.code = code
-    head.rspDomain = msg.domain
+    head.rspDomain = msg.header.domain
 
     return net.reply(10080, msg, head, body)
 end
@@ -328,4 +328,4 @@ end
 ---@field contentType string|nil Content type of body of <code>POST</code> or response
 ---@field upgrade boolean|nil Optional. Response Only. Protocol to upgrade to on code <code>101</code> or <code>426</code>
 ---@field redirect string|nil Optional. Response Only. Redirect location for codes <code>301</code> and <code>307</code>
----@field cookies {str: str}|nil Optional. Cookie table
+---@field cookies { [string]: string }|nil Optional. Cookie table

@@ -93,7 +93,7 @@ local function generateIP()
     return ip
 end
 
-local leases = {} ---@type table<string, DHCPLease>
+local leases = {} ---@type { [string]: DHCPLease }
 local ips = {}
 ips[cfg.addr] = { time = 9e99 }
 ips[cfg.addrTbl.defGateway] = { time = 9e99 }
@@ -126,8 +126,8 @@ end
 -- Table of domain names to IPs.
 -- Formatted {ip, time, port, type}.
 -- Type can be ["lan","com"."gov"."org",...]
-local dns = {} ---@type table<string, DNSRecord>
-local remoteDNS = {} ---@type table<string, DNSRecord> DNS records from remote servers
+local dns = {} ---@type { [string]: DNSRecord }
+local remoteDNS = {} ---@type { [string]: DNSRecord } DNS records from remote servers
 local dnsPath = "/home/dhcp/dns.json"
 if fs.exists(dnsPath) then
     log:info("Loading DNS File")
@@ -141,7 +141,7 @@ if fs.exists(dnsPath) then
         error("DNS file corrupted")
         dns = {}
     end
-    ---@cast dns table<string, DNSRecord>
+    ---@cast dns { [string]: DNSRecord }
     for _, record in pairs(dns) do
         if type(record.ip) == "string" then
             record.ip = net.ipToNumber(record.ip)
@@ -608,7 +608,7 @@ local function handler(msg)
             -- end)
             local rsp = net.sendSync(10000, 0x00000001, "net.dns.get", { domain = domain })
 
-            if type(rsp) ~= "string" and rsp.header.code ~= "not_found" then
+            if type(rsp) ~= "string" and (rsp --[[@as DNS.Message]]).header.code ~= "not_found" then
                 local rec = rsp.body ---@cast rec DNSRecord
                 remoteDNS[domain] = rec
                 log:info('Adding record: ' .. textutils.serialiseJSON(rsp.body))

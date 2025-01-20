@@ -34,7 +34,7 @@ end
 ---Get XML tag name and attributes
 ---@param line string Line to parse for XML tag
 ---@return nil|string name Name of the tag
----@return {string: any}? attributes Attribute table of tag (will be `nil` if tag is closing tag)
+---@return { [string]: any }? attributes Attribute table of tag (will be `nil` if tag is closing tag)
 ---@return boolean? closingTag If the tag is self closing or a closing tag
 ---@return string? line Remaining portion of line after XML tag
 function loader.parseTag(line)

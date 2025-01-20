@@ -1,5 +1,5 @@
 ---@class Parser Command line parser utility
----@field flags {string: CLFlag} Table of known command line flags
+---@field flags { [string]: CLFlag} Table of known command line flags
 local Parser = {
     flags = {}
 }
@@ -15,9 +15,9 @@ end
 ---Parse command line arguments. Pulls out flags and values, and respects quotation marks
 ---@param args string[] Command line arguments
 ---@return string[] arguments Arguments without flags
----@return {string: any} flags Table of flags found
+---@return { [string]: any } flags Table of flags found
 function Parser:parse(args)
-    local cFlags = {} ---@type {string: any}
+    local cFlags = {} ---@type { [string]: any }
     local cArgs = {} ---@type string[]
 
     local temp = nil

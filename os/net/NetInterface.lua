@@ -9,20 +9,20 @@
 ---@field private __ipLeaseExpire number?
 ---@field private __hwAddress string
 ---@field private __hostname string?
----@field private __remoteKeys table<string, string|byteArray>
+---@field private __remoteKeys { [string]: string|byteArray }
 ---@field private __waitingMsgs NetMessage[]
 ---@field private __handlerId number?
----@field private __openPorts table<number, boolean>
----@field private __alreadyProcessed table<string, boolean>
+---@field private __openPorts { [number]: boolean }
+---@field private __alreadyProcessed { [string]: boolean }
 ---@field private __waitingForIPAccept boolean
 ---@field private __waitingForRenew number
----@field private __dnsCache table<string, DHCP.DNSRecord>
+---@field private __dnsCache { [string]: DNS.DNSRecord }
 ---@field private __dhcpIP number?
 ---@field private __config NetInterface.Config
----@field private __msgHandlers table<number, fun(msg: NetMessage)>
+---@field private __msgHandlers { [number]: fun(msg: NetMessage) }
 ---@field private __msgHandlerId number
----@field private __multicastSubscribers table<string, table<string, fun(ip: number, msg: NetMessage)>>
----@field private __multicastSubscriberCounts table<string, number>
+---@field private __multicastSubscribers { [string]: { [string]: fun(ip: number, msg: NetMessage) } }
+---@field private __multicastSubscriberCounts { [string]: number }
 local NetInterface = {
     _config = {
         respondToPing = true
@@ -66,7 +66,7 @@ end
 ---@param ip string|number|nil
 ---@param hwAddress string?
 function NetInterface:__init__(name, modem, ip, hwAddress)
-    name = name or ('net_' .. self.id)
+    name = name or ('net_' .. self.__id)
     self.name = name
     self.log = pos.Logger(('net_interface_%s.log'):format(name))
 
@@ -417,10 +417,10 @@ function NetInterface:__onModemMessage(event)
     ---@cast msg NetMessage
 
     local origin = msg.origin .. '' ---@type string
-    if msg.header.rspDomain then
-        origin = msg.header.rspDomain
+    if (msg.header--[[@as RttpMessage.Header]]).rspDomain then
+        origin = (msg.header--[[@as RttpMessage.Header]]).rspDomain --[[@as string]]
     elseif msg.header.originDomain then
-        origin = msg.originDomain
+        origin = msg.header.originDomain --[[@as string]]
     elseif msg.header.conId then
         origin = origin .. msg.header.conId
     end
@@ -581,9 +581,9 @@ end
 
 ---Get the DNS record for a given hostname
 ---@param hostname string
----@return DHCP.DNSRecord? record
+---@return DNS.DNSRecord? record
 function NetInterface:getDNSRecord(hostname)
-    local dnsRecord = self.__dnsCache[hostname] ---@type DHCP.DNSRecord?
+    local dnsRecord = self.__dnsCache[hostname] ---@type DNS.DNSRecord?
     if dnsRecord then
         if dnsRecord.time + dnsRecord.ttl < os.epoch('utc') then
             dnsRecord = nil
@@ -598,11 +598,13 @@ function NetInterface:getDNSRecord(hostname)
         if msg == 'timeout' then
             self.log:warn('Unable to resolve hostname "%s"; no response from DNS', hostname)
             return nil
-        elseif msg.header.code == 'not_found' then
+        end
+        ---@cast msg DNS.Message
+        if msg.header.code == 'not_found' then
             self.log:warn('Unable to resolve hostname "%s"', hostname)
             return nil
         end
-        dnsRecord = msg.body.record ---@type DHCP.DNSRecord
+        dnsRecord = msg.body.record
         self.__dnsCache[hostname] = dnsRecord
     end
 

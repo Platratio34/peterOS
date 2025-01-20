@@ -352,6 +352,7 @@ function FrameBuffer:drawPolygon(color, points)
     if type(color) == 'number' then
         color = colors.toBlit(color)
     end
+    ---@cast color string
     expect(2, points, 'table')
     local lp = points[#points]
     for i = 1, #points do

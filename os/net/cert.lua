@@ -12,7 +12,7 @@ certificate.available = false ---If the certificate module is available, `false`
 local ccaCert = {} ---@type net.Certificate
 local ccaFilePath = "/os/net/cca.cert"
 
-local cache = {} ---@type {string: net.Certificate} Table of NodeID to Certificate
+local cache = {} ---@type { [string]: net.Certificate } Table of NodeID to Certificate
 local cacheFilePath = "/home/.appdata/net/certificate.cache"
 
 local selfCertFilePath = "/home/.appdata/net/"
@@ -123,7 +123,7 @@ function certificate.getKey(msg)
     if not certificate.available then
         return msg.header.publicKey
     end
-    local origin = msg.header.originDomain or msg.header.rspDomain
+    local origin = msg.header.originDomain or (msg--[[@as RttpMessage]]).header.rspDomain
     if msg.header.certificate then
         local cert = msg.header.certificate ---@cast cert net.Certificate
         if origin ~= cert.id then
@@ -174,12 +174,12 @@ function certificate.saveCache()
     return true
 end
 
-local alreadyRenewing = {} ---@type {string: boolean}
+local alreadyRenewing = {} ---@type { [string]: boolean }
 ---Add applicable self certificate to outgoing message
 ---@param msg NetMessage
 ---@return NetMessage
 function certificate.addCert(msg)
-    local origin = msg.header.originDomain or msg.header.rspDomain
+    local origin = msg.header.originDomain or (msg--[[@as RttpMessage]]).header.rspDomain
     if not origin then
         return msg
     end
@@ -228,6 +228,7 @@ function certificate.addCert(msg)
                     if m.port ~= net.standardPorts.network or m.msgid ~= msgId or m.header.type ~= 'certRenew' then
                         return
                     end
+                    ---@diagnostic disable-next-line: undefined-field
                     if m.header.failed then
                         netLog:warn("Unable to renew certificate " .. cert.id .. ': issuer replied failed')
                         return
@@ -338,7 +339,7 @@ function certificate.setupCertServer(issuer, period, arbitrary)
         if msg.header.domain ~= issuer then
             return
         end
-        if msg.port == net.standardPorts.network and msg.type == 'certRenew' then
+        if msg.port == net.standardPorts.network and msg.header.type == 'certRenew' then
             local req = msg.body ---@cast req net.Certificate
             if not validCerts[req.id] then
                 msg:reply(net.standardPorts.network, { type = "certRenew", originDomain = issuer, failed = 'true' }, {})

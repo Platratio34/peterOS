@@ -29,12 +29,15 @@ function Vector3.new(x, y, z)
     elseif Vector3.isValid(x) and y == nil and z == nil then
         ---@cast x Vector3
         y = x.y
-        x = x.x
         z = x.z
+        x = x.x
     elseif type(x) == 'number' and y == nil and z == nil then
         y = x
         z = x
     end
+    ---@cast x number
+    ---@cast y number
+    ---@cast z number
     local o = {
         x = x,
         y = y,
@@ -166,11 +169,12 @@ function Vector3:add(x, y, z)
     expect(2, y, 'number', 'nil')
     expect(3, z, 'number', 'nil')
     if y == nil then
+        ---@cast x Vector3
         y = x.y
-        x = x.x
         z = x.z
-        ---@cast x number
+        x = x.x
     end
+    ---@cast x number
     self.x = self.x + x
     self.y = self.y + y
     self.z = self.z + z

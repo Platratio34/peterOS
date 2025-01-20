@@ -6,7 +6,7 @@ local xml = {
 
 ---@class XMLElement XML element
 ---@field name string Name of the element
----@field attributes {string: any} Table of attributes
+---@field attributes { [string]: any } Table of attributes
 ---@field children XMLElement[] List of children in order found
 ---@field inner string? Non-element text between opening and closing elements
 ---@field parent XMLElement? Parent of this element
