@@ -72,6 +72,7 @@ end
 local function bnot(x) return (-1 - x) % MOD end
  
 local function rshift1(a, disp)
+    ---@diagnostic disable-next-line: undefined-global
     if disp < 0 then return lshift(a,-disp) end
     return math.floor(a % 2 ^ 32 / 2 ^ disp)
 end

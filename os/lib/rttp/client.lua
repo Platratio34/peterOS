@@ -53,7 +53,7 @@ local function waitForMsg(host)
     repeat
         local event = { os.pullEvent() }
         if event[1] == "modem_message" then
-            local eName, side, channel, replyChannel, message, distance = unpack(event)
+            local eName, side, channel, replyChannel, message, distance = table.unpack(event)
             if channel == 80 then
                 if debug then
                     debugMsg("recived msg:")

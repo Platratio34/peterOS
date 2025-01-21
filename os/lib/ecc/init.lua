@@ -15,9 +15,9 @@
 -- Small tweaks from SquidDev's illuaminate (https://github.com/SquidDev/illuaminate/)
 
 local byteTableMT = {
-    __tostring = function(a) return string.char(unpack(a)) end,
+    __tostring = function(a) return string.char(table.unpack(a)) end,
     __index = {
-        toHex = function(self) return ("%02x"):rep(#self):format(unpack(self)) end,
+        toHex = function(self) return ("%02x"):rep(#self):format(table.unpack(self)) end,
         isEqual = function(self, t)
             if type(t) ~= "table" then return false end
             if #self ~= #t then return false end
@@ -43,7 +43,7 @@ local sha256 = (function()
     local bnot    = bit32 and bit32.bnot or bit.bnot
     local bxor    = bit32 and bit32.bxor or bit.bxor
     local blshift = bit32 and bit32.lshift or bit.blshift
-    local upack   = unpack
+    local upack   = table.unpack
 
     local function rrotate(n, b)
         local s = n/(2^b)
@@ -249,7 +249,7 @@ local chacha20 = (function()
     end
 
     local function hashBlock(state, rnd)
-        local s = {unpack(state)}
+        local s = {table.unpack(state)}
         for i = 1, rnd do
             local r = i%2==1
             s = r and quarterRound(s, 1, 5,  9, 13) or quarterRound(s, 1, 6, 11, 16)
@@ -312,7 +312,7 @@ local chacha20 = (function()
         assert(#key == 16 or #key == 32, "ChaCha20: Invalid key length ("..#key.."), must be 16 or 32")
         assert(#nonce == 12, "ChaCha20: Invalid nonce length ("..#nonce.."), must be 12")
 
-        data = type(data) == "table" and {unpack(data)} or {tostring(data):byte(1,-1)}
+        data = type(data) == "table" and {table.unpack(data)} or {tostring(data):byte(1,-1)}
         cntr = tonumber(cntr) or 1
         round = tonumber(round) or 20
 
@@ -635,8 +635,8 @@ local arith = (function()
     end
 
     local function mult(a, b, half_multiply)
-        local a1, a2, a3, a4, a5, a6, a7 = unpack(a)
-        local b1, b2, b3, b4, b5, b6, b7 = unpack(b)
+        local a1, a2, a3, a4, a5, a6, a7 = table.unpack(a)
+        local b1, b2, b3, b4, b5, b6, b7 = table.unpack(b)
         
         local c1 = a1 * b1
         local c2 = a1 * b2 + a2 * b1
@@ -707,7 +707,7 @@ local arith = (function()
 
     local function square(a)
         -- returns a 336-bit integer (14 words)
-        local a1, a2, a3, a4, a5, a6, a7 = unpack(a)
+        local a1, a2, a3, a4, a5, a6, a7 = table.unpack(a)
         
         local c1 = a1 * a1
         local c2 = a1 * a2 * 2
@@ -819,7 +819,7 @@ local arith = (function()
     -- Represents a 168-bit number as the (2^w)-ary Non-Adjacent Form
     local function NAF(d, w)
         local t = {}
-        d = {unpack(d)}
+        d = {table.unpack(d)}
 
         for i = 1, 168 do
             if d[1] % 2 == 1 then
@@ -869,7 +869,7 @@ local modp = (function()
     local r2 = {13533400, 837116, 6278376, 13533388, 837116, 6278376, 7504076}
 
     local function multByP(a)
-        local a1, a2, a3, a4, a5, a6, a7 = unpack(a)
+        local a1, a2, a3, a4, a5, a6, a7 = table.unpack(a)
 
         local c1 = a1 * 3
         local c2 = a2 * 3
@@ -935,7 +935,7 @@ local modp = (function()
     local function reduceModP(a)
         -- a < p
         if a[7] < 15761408 or a[7] == 15761408 and a[1] < 3 then
-            return {unpack(a)}
+            return {table.unpack(a)}
         end
 
         -- a > p
@@ -996,7 +996,7 @@ local modp = (function()
     -- Reduces a number from [0, p^2 - 1] to [0, p - 1]
     local function REDC(T)
         local m = mult(T, pInverse, true)
-        local t = {unpack(addDouble(T, multByP(m)), 8, 14)}
+        local t = {table.unpack(addDouble(T, multByP(m)), 8, 14)}
 
         return reduceModP(t)
     end
@@ -1016,7 +1016,7 @@ local modp = (function()
     end
 
     local function inverseMontgomeryModP(a)
-        a = {unpack(a)}
+        a = {table.unpack(a)}
 
         for i = 8, 14 do
             a[i] = 0
@@ -1028,8 +1028,8 @@ local modp = (function()
     local ONE = montgomeryModP({1, 0, 0, 0, 0, 0, 0})
 
     local function expModP(base, exponentBinary)
-        base = {unpack(base)}
-        local result = {unpack(ONE)}
+        base = {table.unpack(base)}
+        local result = {table.unpack(ONE)}
 
         for i = 1, 168 do
             if exponentBinary[i] == 1 then
@@ -1080,7 +1080,7 @@ local modq = (function()
 
     -- Reduces a number from [0, 2q - 1] to [0, q - 1]
     local function reduceModQ(a)
-        local result = {unpack(a)}
+        local result = {table.unpack(a)}
 
         if compare(result, q) >= 0 then
             result = sub(result, q)
@@ -1106,8 +1106,8 @@ local modq = (function()
     -- Montgomery REDC algorithm
     -- Reduces a number from [0, q^2 - 1] to [0, q - 1]
     local function REDC(T)
-        local m = {unpack(mult({unpack(T, 1, 7)}, qInverse, true), 1, 7)}
-        local t = {unpack(addDouble(T, mult(m, q)), 8, 14)}
+        local m = {table.unpack(mult({table.unpack(T, 1, 7)}, qInverse, true), 1, 7)}
+        local t = {table.unpack(addDouble(T, mult(m, q)), 8, 14)}
 
         return reduceModQ(t)
     end
@@ -1127,7 +1127,7 @@ local modq = (function()
     end
 
     local function inverseMontgomeryModQ(a)
-        a = {unpack(a)}
+        a = {table.unpack(a)}
 
         for i = 8, 14 do
             a[i] = 0
@@ -1139,8 +1139,8 @@ local modq = (function()
     local ONE = montgomeryModQ({1, 0, 0, 0, 0, 0, 0})
 
     local function expModQ(base, exponentBinary)
-        base = {unpack(base)}
-        local result = {unpack(ONE)}
+        base = {table.unpack(base)}
+        local result = {table.unpack(ONE)}
 
         for i = 1, 168 do
             if exponentBinary[i] == 1 then
@@ -1153,8 +1153,8 @@ local modq = (function()
     end
 
     local function intExpModQ(base, exponent)
-        base = {unpack(base)}
-        local result = setmetatable({unpack(ONE)}, modQMT)
+        base = {table.unpack(base)}
+        local result = setmetatable({table.unpack(ONE)}, modQMT)
 
         if exponent < 0 then
             base = expModQ(base, qMinusTwoBinary)
@@ -1180,7 +1180,7 @@ local modq = (function()
     end
 
     local function decodeModQ(s)
-        s = type(s) == "table" and {unpack(s, 1, 21)} or {tostring(s):byte(1, 21)}
+        s = type(s) == "table" and {table.unpack(s, 1, 21)} or {tostring(s):byte(1, 21)}
         local result = decodeInt(s)
         result[7] = result[7] % q[7]
 
@@ -1189,7 +1189,7 @@ local modq = (function()
 
     local function randomModQ()
         while true do
-            local s = {unpack(random.random(), 1, 21)}
+            local s = {table.unpack(random.random(), 1, 21)}
             local result = decodeInt(s)
             if result[7] < q[7] then
                 return setmetatable(result, modQMT)
@@ -1345,12 +1345,12 @@ local curve = (function()
     local G = {
         {6636044, 10381432, 15741790, 2914241, 5785600, 264923, 4550291},
         {13512827, 8449886, 5647959, 1135556, 5489843, 7177356, 8002203},
-        {unpack(ONE)}
+        {table.unpack(ONE)}
     }
     local O = {
-        {unpack(ZERO)},
-        {unpack(ONE)},
-        {unpack(ONE)}
+        {table.unpack(ZERO)},
+        {table.unpack(ONE)},
+        {table.unpack(ONE)}
     }
 
     -- Projective Coordinates for Edwards curves for point addition/doubling.
@@ -1360,7 +1360,7 @@ local curve = (function()
     -- https://www.hyperelliptic.org/EFD/g1p/auto-edwards-projective.html
     local function pointDouble(P1)
         -- 3M + 4S
-        local X1, Y1, Z1 = unpack(P1)
+        local X1, Y1, Z1 = table.unpack(P1)
 
         local b = addModP(X1, Y1)
         local B = squareModP(b)
@@ -1379,8 +1379,8 @@ local curve = (function()
 
     local function pointAdd(P1, P2)
         -- 10M + 1S
-        local X1, Y1, Z1 = unpack(P1)
-        local X2, Y2, Z2 = unpack(P2)
+        local X1, Y1, Z1 = table.unpack(P1)
+        local X2, Y2, Z2 = table.unpack(P2)
 
         local A = multModP(Z1, Z2)
         local B = squareModP(A)
@@ -1398,11 +1398,11 @@ local curve = (function()
     end
 
     local function pointNeg(P1)
-        local X1, Y1, Z1 = unpack(P1)
+        local X1, Y1, Z1 = table.unpack(P1)
 
         local X3 = subModP(ZERO, X1)
-        local Y3 = {unpack(Y1)}
-        local Z3 = {unpack(Z1)}
+        local Y3 = {table.unpack(Y1)}
+        local Z3 = {table.unpack(Z1)}
         local P3 = {X3, Y3, Z3}
 
         return setmetatable(P3, pointMT)
@@ -1414,20 +1414,20 @@ local curve = (function()
 
     -- Converts (X:Y:Z) into (X:Y:1) = (x:y:1)
     local function pointScale(P1)
-        local X1, Y1, Z1 = unpack(P1)
+        local X1, Y1, Z1 = table.unpack(P1)
 
         local A = expModP(Z1, pMinusTwoBinary)
         local X3 = multModP(X1, A)
         local Y3 = multModP(Y1, A)
-        local Z3 = {unpack(ONE)}
+        local Z3 = {table.unpack(ONE)}
         local P3 = {X3, Y3, Z3}
 
         return setmetatable(P3, pointMT)
     end
 
     local function pointIsEqual(P1, P2)
-        local X1, Y1, Z1 = unpack(P1)
-        local X2, Y2, Z2 = unpack(P2)
+        local X1, Y1, Z1 = table.unpack(P1)
+        local X2, Y2, Z2 = table.unpack(P2)
 
         local A1 = multModP(X1, Z2)
         local B1 = multModP(Y1, Z2)
@@ -1439,7 +1439,7 @@ local curve = (function()
 
     -- Checks if a projective point satisfies the curve equation
     local function pointIsOnCurve(P1)
-        local X1, Y1, Z1 = unpack(P1)
+        local X1, Y1, Z1 = table.unpack(P1)
 
         local X12 = squareModP(X1)
         local Y12 = squareModP(Y1)
@@ -1464,7 +1464,7 @@ local curve = (function()
         local naf = NAF(multiplier, 5)
         local PTable = {P1}
         local P2 = pointDouble(P1)
-        local Q = {{unpack(ZERO)}, {unpack(ONE)}, {unpack(ONE)}}
+        local Q = {{table.unpack(ZERO)}, {table.unpack(ONE)}, {table.unpack(ONE)}}
 
         for i = 3, 31, 2 do
             PTable[i] = pointAdd(PTable[i - 2], P2)
@@ -1491,7 +1491,7 @@ local curve = (function()
 
     local function scalarMultG(multiplier)
         local naf = NAF(multiplier, 2)
-        local Q = {{unpack(ZERO)}, {unpack(ONE)}, {unpack(ONE)}}
+        local Q = {{table.unpack(ZERO)}, {table.unpack(ONE)}, {table.unpack(ONE)}}
 
         for i = 1, 168 do
             if naf[i] == 1 then
@@ -1509,7 +1509,7 @@ local curve = (function()
     local function pointEncode(P1)
         P1 = pointScale(P1)
         local result = {}
-        local x, y = unpack(P1)
+        local x, y = table.unpack(P1)
 
         -- Encode y
         result = encodeInt(y)
@@ -1520,7 +1520,7 @@ local curve = (function()
     end
 
     local function pointDecode(enc)
-        enc = type(enc) == "table" and {unpack(enc, 1, 22)} or {tostring(enc):byte(1, 22)}
+        enc = type(enc) == "table" and {table.unpack(enc, 1, 22)} or {tostring(enc):byte(1, 22)}
         -- Decode y
         local y = decodeInt(enc)
         y[7] = y[7] % p[7]
@@ -1538,7 +1538,7 @@ local curve = (function()
         if x[1] % 2 ~= enc[22] then
             x = subModP(ZERO, x)
         end
-        local P3 = {x, y, {unpack(ONE)}}
+        local P3 = {x, y, {table.unpack(ONE)}}
 
         return setmetatable(P3, pointMT)
     end
@@ -1649,14 +1649,14 @@ local function encrypt(data, key)
 end
 
 local function decrypt(data, key)
-    data = type(data) == "table" and {unpack(data)} or {tostring(data):byte(1,-1)}
+    data = type(data) == "table" and {table.unpack(data)} or {tostring(data):byte(1,-1)}
     local encKey = sha256.hmac("encKey", key)
     local macKey = sha256.hmac("macKey", key)
-    local mac = sha256.hmac({unpack(data, 1, #data - 32)}, macKey)
-    local messageMac = {unpack(data, #data - 31)}
+    local mac = sha256.hmac({table.unpack(data, 1, #data - 32)}, macKey)
+    local messageMac = {table.unpack(data, #data - 31)}
     assert(mac:isEqual(messageMac), "invalid mac")
-    local nonce = {unpack(data, 1, 12)}
-    local ciphertext = {unpack(data, 13, #data - 32)}
+    local nonce = {table.unpack(data, 1, 12)}
+    local ciphertext = {table.unpack(data, 13, #data - 32)}
     local result = chacha20.crypt(ciphertext, encKey, nonce)
 
     return setmetatable(result, byteTableMT)
@@ -1689,8 +1689,8 @@ local function exchange(privateKey, publicKey)
 end
 
 local function sign(privateKey, message)
-    message = type(message) == "table" and string.char(unpack(message)) or tostring(message)
-    privateKey = type(privateKey) == "table" and string.char(unpack(privateKey)) or tostring(privateKey)
+    message = type(message) == "table" and string.char(table.unpack(message)) or tostring(message)
+    privateKey = type(privateKey) == "table" and string.char(table.unpack(privateKey)) or tostring(privateKey)
     local x = modq.decodeModQ(privateKey)
     local k = modq.randomModQ()
     local R = curve.G * k
@@ -1709,10 +1709,10 @@ local function sign(privateKey, message)
 end
 
 local function verify(publicKey, message, signature)
-    message = type(message) == "table" and string.char(unpack(message)) or tostring(message)
+    message = type(message) == "table" and string.char(table.unpack(message)) or tostring(message)
     local Y = curve.pointDecode(publicKey)
-    local e = modq.decodeModQ({unpack(signature, 1, #signature / 2)})
-    local s = modq.decodeModQ({unpack(signature, #signature / 2 + 1)})
+    local e = modq.decodeModQ({table.unpack(signature, 1, #signature / 2)})
+    local s = modq.decodeModQ({table.unpack(signature, #signature / 2 + 1)})
     local Rv = curve.G * s + Y * e
     local ev = modq.hashModQ(message .. tostring(Rv))
 

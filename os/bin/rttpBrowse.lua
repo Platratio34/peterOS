@@ -216,7 +216,7 @@ while true do
             local event = { os.pullEvent() }
             
             if event[1] == "mouse_click" then
-                local eventN, button, x, y = unpack(event)
+                local eventN, button, x, y = table.unpack(event)
 
                 if y == 1 then
                     if x == w then

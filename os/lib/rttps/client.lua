@@ -82,7 +82,7 @@ local function waitForMsgInt(host)
     repeat
         local event = { os.pullEvent() }
         if event[1] == "modem_message" then
-            local eName, side, channel, replyChannel, message, distance = unpack(event)
+            local eName, side, channel, replyChannel, message, distance = table.unpack(event)
             ---@diagnostic disable-next-line: cast-type-mismatch
             ---@cast message table
             if channel == 80 then

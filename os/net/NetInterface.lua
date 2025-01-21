@@ -406,7 +406,7 @@ end
 
 ---@private
 function NetInterface:__onModemMessage(event)
-    local _, side, port, _, msg = unpack(event)
+    local _, side, port, _, msg = table.unpack(event)
     if side ~= self.__modemSide then
         return
     end

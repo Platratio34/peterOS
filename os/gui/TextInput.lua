@@ -93,7 +93,7 @@ end
 ---@param window Window The window the input is processed in
 function TextInput:process(event, window)
     if event[1] == 'mouse_click' then
-        local _, _, x, y = unpack(event)
+        local _, _, x, y = table.unpack(event)
         x = x - window.x
         y = y - window.y
         if x >= self.x and x < self.x + self.w and y == self.y then
