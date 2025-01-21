@@ -1,7 +1,7 @@
 local ecc = pos.require("ecc")
 
 local keyFilename = "/home/.appdata/net/key.key"
-local keyset = nil ---@type { private: table, public: table }?
+local keyset = nil ---@type { private: table, public: table }
 
 local keys = {}
 
