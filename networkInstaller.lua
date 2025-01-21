@@ -203,29 +203,34 @@ pgCoreF.write(rspPGCore.readAll())
 pgCoreF.close()
 shell.run('/os/bin/pgm-get/core.lua')
 
-print("Installing default programs")
-pgmGet.updateManifest()
-for i=1,#fileManifest.pgms do
-    local program = fileManifest.pgms[i]
-    local percent = math.floor((i/#fileManifest.pgms)*100)
-    print(percent.."% | Installing "..program)
-    -- shell.run("/os/bin/pgm-get", "install", program)
-    pgmGet.install(program, 'latest', true)
-end
-print("Done installing default programs")
-
-if not (pgms == nil) then
-    print("Installing previous programs")
-    -- pgmGet.upgrade(true)
-    for _,pgm in pairs(pgms) do
-        if pgm.forcedVersion then
-            pgmGet.install(pgm.name, pgm.version, true)
-        else
-            pgmGet.install(pgm.name, 'latest', true)
-        end
+if not pgmGet then
+    printError("pgm-get not avalible, unable to install programs.")
+    printError("Try running `updateOS y` after rebooting to ensure all programs are correctly installed")
+else
+    print("Installing default programs")
+    pgmGet.updateManifest()
+    for i = 1, #fileManifest.pgms do
+        local program = fileManifest.pgms[i]
+        local percent = math.floor((i / #fileManifest.pgms) * 100)
+        print(percent .. "% | Installing " .. program)
+        -- shell.run("/os/bin/pgm-get", "install", program)
+        pgmGet.install(program, 'latest', true)
     end
+    print("Done installing default programs")
 
-    print("Done installing previous programs")
+    if not (pgms == nil) then
+        print("Installing previous programs")
+        -- pgmGet.upgrade(true)
+        for _, pgm in pairs(pgms) do
+            if pgm.forcedVersion then
+                pgmGet.install(pgm.name, pgm.version, true)
+            else
+                pgmGet.install(pgm.name, 'latest', true)
+            end
+        end
+
+        print("Done installing previous programs")
+    end
 end
 
 if os.getComputerLabel() == nil then
