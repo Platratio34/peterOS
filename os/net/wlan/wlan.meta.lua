@@ -45,6 +45,39 @@
 ---@field remove boolean? Un register the address for the device
 ---@field broadcast boolean? If the broadcast messages should be passed to it as well. If unset will have no effect
 
+---@class Wlan.MessageBody
+---@field [1] integer
+---@field [2] NetMessage
+
+---@class WlanDriver.Wrapper : ModemPeripheral
+local Wrapper = {}
+
+---Transmit a message
+---@param port integer Message port
+---@param _ integer Unused
+---@param payload NetMessage Message to transmit
+function Wrapper.transmit(port, _, payload) end
+
+---Checks if the modem is wireless
+---@return true
+function Wrapper.isWireless() end
+
+---Open the specified port
+---@param port integer Port to open
+function Wrapper.open(port) end
+
+---Checks if the requested port is currently open
+---@param port integer Port to check
+---@return boolean open
+function Wrapper.isOpen(port) end
+
+---Close the specified port
+---@param port integer Port to close
+function Wrapper.close(port) end
+
+---Closes all open ports
+function Wrapper.closeAll() end
+
 --[[
 
 Network:

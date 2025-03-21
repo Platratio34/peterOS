@@ -1,16 +1,18 @@
 
 ---@class WlanDriver
 ---@field name string
----@field _network Wlan.Network?
----@field __known { string: { ['time']: number, ['network']: Wlan.Network } }
----@field __modem ModemPeripheral
----@field __modemName string
----@field __handlerId integer
----@field _hwAddr string
----@field _connecting Lock?
----@field _queryLock Lock?
----@field _querySSID string?
----@field _log Logger
+---@field package _network Wlan.Network?
+---@field package _hwAddr string
+---@field package _log Logger
+---@field package _wrapper WlanDriver.Wrapper
+---@field package _known { string: { ['time']: number, ['network']: Wlan.Network } }
+---@field package _addresses { NetAddress: boolean }
+---@field private __conectingLock Lock?
+---@field private __queryLock Lock?
+---@field private __querySSID string?
+---@field private __modem ModemPeripheral
+---@field private __modemName string
+---@field private __handlerId integer
 local WlanDriver = {}
 
 local WlanDriverMT = {
@@ -20,10 +22,10 @@ local WlanDriverMT = {
 local wlanI = 0
 
 ---Create a new WLAN driver
----@param name string Driver name. Must be computer unique
+---@param name string? Driver name. Must be computer unique. If omitted, with be in the pattern `wlan#`
 ---@param modem ModemPeripheral? Modem for the driver to use. If not provided, will find a wireless modem or error
 ---@return WlanDriver driver
-function WlanDriver.new(name, modem)
+function net.WlanDriver(name, modem)
     local o = {}
     setmetatable(o, WlanDriverMT)
     ---@cast o WlanDriver
@@ -43,6 +45,8 @@ function WlanDriver:__init__(name, modem)
     self.name = name
     self._hwAddr = os.computerId() .. '-' .. name
     self._log = pos.Logger('net/'..name, false, true)
+    self._known = {}
+    self._addresses = {}
     if modem then
         self.__modem = modem
     else
@@ -82,14 +86,14 @@ function WlanDriver:__onMdmMsg(event)
         end
         ---@cast msg Wlan.AdvertMessage
         
-        if self._queryLock then -- we are currently trying to find a network
-            if msg.method == 'query' and msg.dest == self._hwAddr and msg.ssid == self._querySSID then
+        if self.__queryLock then -- we are currently trying to find a network
+            if msg.method == 'query' and msg.dest == self._hwAddr and msg.ssid == self.__querySSID then
                 ---@cast msg Wlan.QueryReturnMessage
-                self._queryLock:release(msg.body)
+                self.__queryLock:release(msg.body)
             end
         end
         if msg.method == 'advert' then
-            self.__known[msg.ssid] = {
+            self._known[msg.ssid] = {
                 time = os.clock(),
                 network = msg.body
             }
@@ -109,11 +113,11 @@ function WlanDriver:__onMdmMsg(event)
     if msg.method == 'connect' then
         local body = msg.body --[[@as Wlan.ConnectReturnBody]]
         if body.valid then
-            self._connecting:release()
-            self._connecting = nil
+            self.__conectingLock:release()
+            self.__conectingLock = nil
         else -- something went wrong connecting
-            self._connecting:release(body.reason)
-            self._connecting = nil
+            self.__conectingLock:release(body.reason)
+            self.__conectingLock = nil
             self._network = nil
         end
         return
@@ -125,19 +129,25 @@ function WlanDriver:__onMdmMsg(event)
             --TODO: Throw error to log
             return
         end
-        msg.sig = nil
         msg.body = body
+    else
+        -- ??
+    end
+
+    if msg.method == 'msg' then
+        os.queueEvent('modem_message', self.name, msg.body[1], msg.body[1], msg.body[2], nil)
     end
 end
 
 ---Get a list of the currently known networks available
----@return string[]
+---@return string[] networks SSIDs of known networks
+---@see WlanDriver.getNetworkDetails to get the details on the networks
 function WlanDriver:getKnown()
     local networks = {}
     local cTime = os.clock()
-    for ssid, net in pairs(self.__known) do
+    for ssid, net in pairs(self._known) do
         if cTime - net.time > 120 then
-            self.__known[ssid] = nil
+            self._known[ssid] = nil
         else
             table.insert(networks, ssid)
         end
@@ -151,21 +161,16 @@ end
 ---@return boolean connected
 ---@return string? message
 function WlanDriver:connect(ssid, key)
-    if self._network then
-        -- disconnect from previous network
-        self:_sendMsg('disconnect', self._hwAddr)
-        self.__modem.close(self._network.channel)
-        self._network = nil
-    end
-    self._connecting = pos.Lock():lock()
+    self:disconnect()
+    self.__conectingLock = pos.Lock():lock()
 
     local network
-    if self.__known[ssid] then
-        network = self.__known[ssid]
+    if self._known[ssid] then
+        network = self._known[ssid]
     else
         -- try to find the network
-        self._queryLock = pos.Lock():lock()
-        self._querySSID = ssid
+        self.__queryLock = pos.Lock():lock()
+        self.__querySSID = ssid
         self.__modem.transmit(20000, 20000, {
             method = 'query',
             ssid = ssid,
@@ -174,13 +179,13 @@ function WlanDriver:connect(ssid, key)
             }
         })
 
-        local s, m = self._queryLock:await(5)
+        local s, m = self.__queryLock:await(5)
         if not s then
             return false, 'query-timeout'
         end
         ---@cast m Wlan.Network
         network = m
-        self.__known[m.ssid] = {
+        self._known[m.ssid] = {
             time = os.clock(),
             network = m
         }
@@ -191,7 +196,7 @@ function WlanDriver:connect(ssid, key)
     end
     
     self:__connectInt(network, key)
-    local s, m = self._connecting:await(5)
+    local s, m = self.__conectingLock:await(5)
     if not s then
         return false, 'auth-timeout'
     elseif m then
@@ -201,6 +206,50 @@ function WlanDriver:connect(ssid, key)
     -- TODO: probably need to get IP here
     
     return true
+end
+
+---Disconect the drive for the current network
+---@return boolean wasConnected If the driver was connected to a network
+function WlanDriver:disconnect()
+    if not self._network then
+        return false
+    end
+    self:_sendMsg('disconnect', self._hwAddr)
+    self.__modem.close(self._network.channel)
+    self._network = nil
+    return true
+end
+
+---Checks if the driver is currently connected to a network and able to send messages.
+---@return boolean connected
+function WlanDriver:isConnected()
+    return self._network ~= nil and self.__conectingLock == nil
+end
+
+---Gets the network the driver is currently connected to. Will return non-nil if the driver is currently connecting to a network, but unable to send messages.
+---@return string|nil network The SSID of the connected network
+---@see WlanDriver.isConnected to check if messages can be sent
+function WlanDriver:getNetwork()
+    if not self._network then
+        return nil
+    end
+    return self._network.ssid
+end
+
+---Get the details of a known network by ssid
+---@param ssid string Network SSID to get details of
+---@return Wlan.Network? network The network, or `nil` if the network is not known
+---@see WlanDriver.getKnown to get a list of known networks by SSID
+function WlanDriver:getNetworkDetails(ssid)
+    if self._network and self._network.ssid == ssid then
+        return self._network
+    end
+    local n = self._known[ssid]
+    if not n then
+        return nil
+    end
+    local network = n.network
+    return network
 end
 
 ---@private
@@ -234,7 +283,7 @@ function WlanDriver:_sendMsg(method, body)
         origin = self._hwAddr,
         body = body
     }
-    if not self._connecting then
+    if not self.__conectingLock then
         -- encrypt the body
         local ser = textutils.serialise(body)
         local enc, sig = net.encrypt.encrypt(ser, network.publicKey)
@@ -246,19 +295,20 @@ end
 
 ---Register an IP with this driver on the current network
 ---@param addr NetAddress Address to register
-function WlanDriver:_addAddress(addr)
+function WlanDriver:addAddress(addr)
     if not self._network then
         error("Driver not connect to a network", 2)
     end
     local msg = { ---@type Wlan.RegisterIPBody
         addr = addr
     }
+    self._addresses[addr] = true
     self:_sendMsg('register-ip', msg)
 end
 
 ---Un-Register an IP with for driver on the current network
 ---@param addr NetAddress Address to remove
-function WlanDriver:_removeAddress(addr)
+function WlanDriver:removeAddress(addr)
     if not self._network then
         error("Driver not connect to a network", 2)
     end
@@ -266,6 +316,7 @@ function WlanDriver:_removeAddress(addr)
         addr = addr,
         remove = true
     }
+    self._addresses[addr] = nil
     self:_sendMsg('register-ip', msg)
 end
 
@@ -279,4 +330,61 @@ function WlanDriver:receiveBroadcast(broadcast)
         broadcast = broadcast
     }
     self:_sendMsg('register-ip', msg)
+end
+
+---Send a message over the current network
+---@param port integer Port to send the message on
+---@param message NetMessage Message to send
+function WlanDriver:send(port, message)
+    if not self._network then
+        error('WLAN Driver not connected to a network', 2)
+    end
+    self:_sendMsg('msg', {port, message})
+end
+
+---Get a modem wrapper for creating a network interface
+---@return WlanDriver.Wrapper wrapper
+function WlanDriver:getModemWrapper()
+    if self._wrapper then
+        return self._wrapper
+    end
+    local wrapper = { ---@type WlanDriver.Wrapper
+        transmit = function(port, _, msg)
+            ---@cast msg NetMessage
+            if not self._addresses[msg.origin] then -- automaticlly register any new address we are sending from
+                self:addAddress(msg.origin)
+            end
+            self:send(port, msg)
+        end,
+        isWireless = function() return true end,
+        open = function(port)
+            -- do we actaully need this?
+        end,
+        isOpen = function(port)
+            return true
+        end,
+        close = function(port)
+            -- do we actaully need this?
+        end,
+        closeAll = function()
+            -- do we actaully need this?
+        end
+    }
+    setmetatable(wrapper, {
+        __name = 'peripheral',
+        types = {
+            ['wlan_driver'] = 'wlan_driver'
+        },
+        name = self.name
+    })
+    self._wrapper = wrapper
+    return wrapper
+end
+
+---Dispose of the driver.
+---
+---**DRIVER AND WRAPPER WILL NOT WORK AFTER CALLING THIS**
+function WlanDriver:dispose()
+    self:disconnect()
+    pos.removeEventHandler(self.__handlerId)
 end
