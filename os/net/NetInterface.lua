@@ -24,7 +24,7 @@
 ---@field private __multicastSubscribers { [string]: { [string]: fun(ip: number, msg: NetMessage) } }
 ---@field private __multicastSubscriberCounts { [string]: number }
 local NetInterface = {
-    _config = {
+    __config = {
         respondToPing = true
     },
     __msgHandlerId = 0
@@ -128,6 +128,7 @@ function NetInterface:__init__(name, modem, ip, hwAddress)
     self.__msgHandlers = {}
     self.__multicastSubscribers = {}
     self.__multicastSubscriberCounts = {}
+    self.__remoteKeys = {}
 
     self.__handlerId = pos.addEventHandler(function(event, handler) self:__onModemMessage(event) end, 'modem_message',
         name .. '_mmHandler')
@@ -304,7 +305,7 @@ function NetInterface:waitForMessage(port, check, timeout)
     end
 
     while true do
-        local event = { pos.pullEvent() }
+        local event = { os.pullEvent() }
         if event[1] == 'timer' and event[2] == timeout then
             return 'timeout'
         elseif event[1] == 'modem_message' then
