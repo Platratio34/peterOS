@@ -242,86 +242,6 @@ net.setup = function(mdm, ip)
         msgHandlerId = defaultInterface:addMsgHandler(onMsg)
     end
     return defaultInterface:setup()
-
-    -- if isSetup then return true end
-    -- if not fs.exists(hwAddrPath) then
-    --     hwAddr = string.randomString(16, { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' })
-    --     local f = fs.open(hwAddrPath, "w")
-    --     if f == nil then
-    --         log:error("Failed to write Hardware Address, Network module unavailable")
-    --         error("Failed to write Hardware Address, Network module unavailable", 0)
-    --         return false
-    --     end
-    --     f.write(hwAddr)
-    --     f.close()
-    -- else
-    --     local f = fs.open(hwAddrPath, "r")
-    --     if f == nil then
-    --         log:error("Failed to read Hardware Address, Network module unavailable")
-    --         error("Failed to read Hardware Address, Network module unavailable", 0)
-    --         return false
-    --     end
-    --     hwAddr = f.readAll()
-    --     f.close()
-    -- end
-
-    -- if mdm == nil then
-    --     local modems = { peripheral.find("modem", function(name, test)
-    --         return test.isWireless()
-    --     end) }
-    --     if #modems == 0 then
-    --         modems = { peripheral.find("modem"), }
-    --         if #modems == 0 then
-    --             log:error("No Modem Attached")
-    --             error("No Modem Attached", 0)
-    --             return false
-    --         end
-    --     end
-    --     modem = modems[1]
-    -- else
-    --     modem = mdm
-    -- end
-
-    -- if ip == nil then
-    --     local ipGetBody = {}
-    --     if cfg.hostname ~= "" then
-    --         ipGetBody.hostname = cfg.hostname
-    --     end
-    --     for i = 1, 3 do
-    --         -- print("Getting IP")
-    --         sendMsg(10000, -1, { type = "net.ip.req" }, ipGetBody)
-    --         if waitForMsg(function(port, msg)
-    --                 if port ~= 10000 then return true end
-    --                 if msg.dest == "hw:" .. hwAddr and msg.header.type == "net.ip.acp.return" then
-    --                     return false
-    --                 end
-    --                 return true
-    --             end, 10) == "timeout" then
-    --             log:error("Failed to get IP address, Trying again in 30 seconds")
-    --             -- return false
-    --         else
-    --             log:info('Got IP address: ' .. net.ipFormat(ipAddr))
-    --             break
-    --         end
-    --         os.sleep(30)
-    --     end
-    --     if type(ipAddr) ~= "number" or ipAddr < 0 then
-    --         print(ipAddr)
-    --         ipAddr = -1
-    --         log:error("Failed to get IP address, Network module unavailable")
-    --         error("Failed to get IP address, Network module unavailable", 0)
-    --         return false
-    --     end
-    -- else
-    --     ipAddr = ip
-    -- end
-
-    -- for _, port in pairs(net.standardPorts) do
-    --     net.open(port)
-    -- end
-
-    -- isSetup = true
-    -- return true
 end
 
 -- +----------------+
@@ -336,17 +256,6 @@ end
 ---@return number id Message ID or -1 on error
 net.send = function(port, dest, msgType, body)
     return defaultInterface:send(port, dest, msgType, body)
-    -- expect(1, port, "number")
-    -- expect(2, dest, "number", "string")
-    -- expect(3, msgType, "string")
-
-    -- if not net.setup() then
-    --     return -1
-    -- end
-    -- local head = {
-    --     type = msgType
-    -- }
-    -- return sendMsg(port, dest, head, body)
 end
 ---Send a message with a type header, and waits for the reply.
 ---Returns the message, "setup_fail", "sent_fail", or "timeout" after 2 seconds
@@ -358,40 +267,6 @@ end
 ---@return NetMessage|string rsp Response message, or error string
 net.sendSync = function(port, dest, msgType, body, timeout)
     return defaultInterface:sendSync(port, dest, msgType, body, timeout)
-    -- expect(1, port, "number")
-    -- expect(2, dest, "number", "string")
-    -- expect(3, msgType, "string")
-    -- expect(5, timeout, "nil", "number")
-
-    -- if not net.setup() then
-    --     return "setup_fail"
-    -- end
-    -- net.open(port)
-    -- local head = {
-    --     type = msgType
-    -- }
-    -- local id = sendMsg(port, dest, head, body)
-    -- if id == -1 then
-    --     return "send_fail"
-    -- end
-    -- log:debug(("Waiting for reply w/ id `%d`"):format(id))
-    -- return waitForMsg(function(rPort, message)
-    --     if rPort ~= port then
-    --         log:debug(('p `%d` != `%d`'):format(rPort, port))
-    --         return true
-    --     end
-    --     if message.dest == ipAddr then
-    --         if message.msgid == id then
-    --             log:debug('- Found message')
-    --             return false
-    --         else
-    --             log:debug(('i `%d` != `%d`'):format(message.msgid, id))
-    --         end
-    --     else
-    --         log:debug(('d `%s` != `%s`'):format(message.dest, ipAddr))
-    --     end
-    --     return true
-    -- end, timeout)
 end
 
 ---Send a message with a custom header. Header should include a 'type' parameter.
@@ -402,15 +277,6 @@ end
 ---@return number id Message ID or -1 on error
 net.sendAdv = function(port, dest, head, body)
     return defaultInterface:sendAdv(port, dest, head, body)
-    -- expect(1, port, "number")
-    -- expect(2, dest, "number", "string")
-    -- expect(3, head, "table")
-
-    -- if not net.setup() then
-    --     return -1
-    -- end
-    -- net.open(port)
-    -- return sendMsg(port, dest, head, body)
 end
 ---Send a message with a custom header, and waits for the reply. Header should include a 'type' parameter.
 ---Returns the message, "setup_fail", "send_fail", or "timeout" after 2 seconds
@@ -422,38 +288,6 @@ end
 ---@return NetMessage|string rsp Response message, or error string
 net.sendAdvSync = function(port, dest, head, body, timeout)
     return defaultInterface:sendAdvSync(port, dest, head, body, timeout)
-    -- expect(1, port, "number")
-    -- expect(2, dest, "number", "string")
-    -- expect(3, head, "table")
-    -- expect(5, timeout, "nil", "number")
-
-    -- if not net.setup() then
-    --     return "setup_fail"
-    -- end
-    -- net.open(port)
-    -- local id = sendMsg(port, dest, head, body)
-    -- if id == -1 then
-    --     return "send_fail"
-    -- end
-    -- log:debug(("Waiting for reply w/ id `%d`"):format(id))
-    -- return waitForMsg(function(rPort, message)
-    --     if rPort ~= port then
-    --         log:debug(('p `%d` != `%d`'):format(rPort, port))
-    --         return true
-    --     end
-    --     -- if message.header == head and message.body == body then return true end
-    --     if message.dest == ipAddr then
-    --         if message.msgid == id then
-    --             log:debug('- Found message')
-    --             return false
-    --         else
-    --             log:debug(('i `%d` != `%d`'):format(message.msgid, id))
-    --         end
-    --     else
-    --         log:debug(('d `%s` != `%s`'):format(message.dest, ipAddr))
-    --     end
-    --     return true
-    -- end, timeout)
 end
 
 ---Reply to a message
@@ -464,18 +298,6 @@ end
 ---@return number id Reply id
 net.reply = function(port, old, head, body)
     return defaultInterface:reply(port, old, head, body)
-    -- expect(1, port, "number")
-    -- expect(2, old, "table")
-    -- expect(3, head, "table")
-
-    -- if not net.setup() then
-    --     return -1
-    -- end
-    -- net.open(port)
-    -- if old.header.conId then head.destConId = old.header.conId end
-    -- if old.header.domain then head.originDomain = old.header.domain end
-    -- head.publicKey = nil
-    -- return sendMsg(port, old.origin, head, body, old.msgid)
 end
 
 -- +----------------+
@@ -620,20 +442,10 @@ net.standardPorts = {
 ---@param dest NetAddress|string Destination hostname, IP address, HW address
 net.ping = function(dest)
     local time, err = defaultInterface:ping(dest)
-    if time > -1 then
+    if time == -1 then
         error('Error pinging ' .. net.ipFormat(net.realizeHostname(dest)) .. ': ' .. err, 2)
     end
     print("Received return from " .. net.ipFormat(net.realizeHostname(dest)) .. " after " .. (time/1000) .. "s")
-    -- local time = os.time()
-    -- local rt = net.sendSync(net.standardPorts.network, dest, "ping", {})
-    -- if type(rt) ~= "table" then
-    --     log:error('Error pinging ' .. net.ipFormat(net.realizeHostname(dest)) .. ': ' .. rt)
-    --     error('Error pinging ' .. net.ipFormat(net.realizeHostname(dest)) .. ': ' .. rt, 0)
-    --     return
-    -- end
-    -- local elapsed = os.time() - time
-    -- log:debug("Received return from " .. net.ipFormat(net.realizeHostname(dest)) .. " after " .. elapsed .. "s")
-    -- print("Received return from " .. net.ipFormat(net.realizeHostname(dest)) .. " after " .. elapsed .. "s")
 end
 
 ---Split a url string
