@@ -282,7 +282,7 @@ end
 ---@param port number? Port of message
 ---@param check nil|fun(port: number, msg: NetMessage): boolean Check function, returns `false` on message you want
 ---@param timeout number? Timeout (`-1` to disable, defaults to `net.DEFAULT_TIMEOUT`)
----@return NetMessage|string msg
+---@return NetMessage|string msg The message or `timeout`
 function NetInterface:waitForMessage(port, check, timeout)
     if port then
         self:open(port)
@@ -342,6 +342,9 @@ function NetInterface:setup()
                 return true
             end, 10)
             if rsp == "timeout" then
+                if (self.__ip) then
+                    self.__log:warn('IP request timed out, but an IP has been set')
+                end
                 self.__log:error("Failed to get IP address: timeout; Trying again in 30 seconds")
             else
                 self.__log:info('Got IP address: ' .. net.ipFormat(self.__ip))
@@ -588,7 +591,7 @@ end
 function NetInterface:getDNSRecord(hostname)
     local dnsRecord = self.__dnsCache[hostname] ---@type DNS.DNSRecord?
     if dnsRecord then
-        if dnsRecord.time + dnsRecord.ttl < os.epoch('utc') then
+        if dnsRecord.ttl and dnsRecord.time + dnsRecord.ttl < os.epoch('utc') then
             dnsRecord = nil
         end
     end
@@ -598,9 +601,10 @@ function NetInterface:getDNSRecord(hostname)
     end
     
     if not dnsRecord then
+        self.__log:info('Querying DNS for record for %s', hostname)
         self:__sendMsg(net.standardPorts.network, self.__dhcpIP, { type = 'net.dns.get' }, { domain = hostname })
         local msg = self:waitForMessage(net.standardPorts.network, function(port, msg)
-            return msg.origin == self.__dhcpIP and msg.header.type == 'net.dns.get.return'
+            return not (msg.origin == self.__dhcpIP and msg.header.type == 'net.dns.get.return')
         end, net.DEFAULT_TIMEOUT)
         if msg == 'timeout' then
             self.__log:warn('Unable to resolve hostname "%s"; no response from DNS', hostname)
@@ -608,7 +612,7 @@ function NetInterface:getDNSRecord(hostname)
         end
         ---@cast msg DNS.Message
         if msg.header.code == 'not_found' then
-            self.__log:warn('Unable to resolve hostname "%s"', hostname)
+            self.__log:warn('Unable to resolve hostname "%s": Not Found', hostname)
             return nil
         end
         dnsRecord = msg.body.record
@@ -616,7 +620,7 @@ function NetInterface:getDNSRecord(hostname)
     end
 
     if not dnsRecord then
-        self.__log:warn('Unable to resolve hostname "%s"', hostname)
+        self.__log:warn('Unable to resolve hostname "%s": Unknown error', hostname)
         return nil
     end
 

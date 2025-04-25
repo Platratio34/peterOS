@@ -24,27 +24,6 @@ if not config.loaded then
     return
 end
 cfg = config.data
--- if not fs.exists(cfgPath) then
---     local f = fs.open(cfgPath, "w")
---     if f == nil then
---         error("Unable to write to config at " .. cfgPath, 0)
---         return
---     end
---     f.write(textutils.serialiseJSON(cfg))
---     f.close()
--- else
---     local f = fs.open(cfgPath, "r")
---     if f == nil then
---         error("Unable to read to config at " .. cfgPath, 0)
---         return
---     end
---     cfg = textutils.unserialiseJSON(f.readAll())
---     if cfg == nil then
---         error("Config corrupted", 0)
---         return
---     end
---     f.close()
--- end
 
 -- log:info(cfg.addr)
 if not net.setup(nil, cfg.addr) then
@@ -125,7 +104,7 @@ end
 
 -- Table of domain names to IPs.
 -- Formatted {ip, time, port, type}.
--- Type can be ["lan","com"."gov"."org",...]
+-- Type can be ["A","CNAME"]
 local dns = {} ---@type { [string]: DNSRecord }
 local remoteDNS = {} ---@type { [string]: DNSRecord } DNS records from remote servers
 local dnsPath = "/home/dhcp/dns.json"
@@ -184,6 +163,7 @@ local function save()
     end
     f.write(t)
     f.close()
+    log:info("Leases file saved")
 end
 local function saveDns()
     sleep(0)
@@ -209,6 +189,7 @@ local function saveDns()
     end
     f.write(t)
     f.close()
+    log:info('DNS file saved')
 end
 
 local function getDNSRecord(domain)
@@ -344,26 +325,26 @@ local function rttpMsgHandler(msg)
                 elseif tonumber(port) then
                     port = tonumber(port) ---@cast port number
                 end
-                local nameSplit = string.split(recordName, '.')
+                
                 local record = { ---@type DNSRecord
                     ip = net.ipToNumber(msg.body.vals.host),
                     port = port,
-                    type = nameSplit[#nameSplit],
+                    type = "A",
                     time = os.epoch(),
                 }
                 dns[recordName] = record
-                saveDns()
                 rttp.reply(msg, rttp.responseCodes.movedTemporarily, 'text/plain', "Record Added",
                     { type = 'rttp', redirect = '..' })
+                saveDns()
                 return
             end
         elseif path == '/panel/dns/remove' then
             if msg.body.type == 'BUTTON_PUSH' then
                 log:info('Removed record for '..msg.body.id)
                 dns[msg.body.id] = nil
-                saveDns()
                 rttp.reply(msg, rttp.responseCodes.movedTemporarily, 'text/plain', "Record Removed",
                     { type = 'rttp', redirect = '' })
+                saveDns()
                 return
             end
         end
@@ -501,13 +482,13 @@ local function handler(msg)
         end
 
         -- Generate a new lease for the computer
-
         lease = {
             -- time = sysTime + (8.64e7 * 0.5), -- expiration time of the lease
             time = -1,
             owner = msg.origin, -- owners hardware address
             ip = generateIP(),  -- lease IP
         }
+
         local m = nil
         while m ~= "timeout" do
             while ips[lease.ip] ~= nil and (ips[lease.ip].time == -1 or ips[lease.ip].time > sysTime) do
@@ -547,13 +528,17 @@ local function handler(msg)
                         ip = lease.ip,
                         time = sysTime,
                         port = "*",
-                        type = "lan",
+                        type = "A",
                     }
-                    saveDns()
                 end
             end
             net.reply(10000, msg, { type = "net.ip.acp.return" },
                 { ip = lease.ip, mask = cfg.mask, time = lease.time, addrTbl = cfg.addrTbl })
+            if lease.hostname then
+                if not cfg.global then
+                    saveDns()
+                end
+            end
             save()
             return
         end
@@ -570,9 +555,8 @@ local function handler(msg)
                     ip = lease.ip,
                     time = sysTime,
                     port = "*",
-                    type = "lan",
+                    type = "A",
                 }
-                saveDns()
             end
         end
         while ips[lease.ip] ~= nil and ips[lease.ip].time > sysTime do
@@ -582,6 +566,12 @@ local function handler(msg)
             { ip = lease.ip, mask = cfg.mask, time = lease.time, addrTbl = cfg.addrTbl })
         leases[msg.origin] = lease
         ips[lease.ip] = lease
+        
+        if msg.body.hostname ~= nil then
+            if not cfg.global then
+                saveDns()
+            end
+        end
         save()
     elseif msg.header.type == "net.ip.renew" then -- Renew DHCP Lease
         local lease = leases[msg.body.hwaddr]
@@ -642,7 +632,7 @@ local function handler(msg)
             return
         end
 
-        msg:reply(10000, { type = "net.dns.get.return", code = "found", hostname = domain }, record)
+        msg:reply(10000, { type = "net.dns.get.return", code = "found", hostname = domain }, { record = record })
         log:info("Returned ip " .. net.ipFormat(record.ip) .. " for '" .. domain .. "'")
     elseif msg.header.type == 'net.ip.changeHost' then
         local src = msg.origin
@@ -652,7 +642,7 @@ local function handler(msg)
                 ip = src,
                 time = sysTime,
                 port = "*",
-                type = "lan",
+                type = "A",
             }
             saveDns()
         end
