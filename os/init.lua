@@ -48,7 +48,9 @@ for i = 1, #osPgms do
         dirPath = dirPath .. pgm.name .. "/"
         modPath = modPath .. pgm.name .. "."
     end
-    shell.setAlias(pgm.name, "/" .. dirPath .. pgm.exec)
+    if pgm.exec then
+        shell.setAlias(pgm.name, "/" .. dirPath .. pgm.exec)
+    end
     if pgm.cmpt then
         local completer = pos.require(modPath .. pgm.cmpt).complete
         shell.setCompletionFunction(dirPath .. pgm.exec, completer)
@@ -82,7 +84,9 @@ for i = 1, #pgms do
         dirPath = dirPath .. pgm.name .. "/"
         modPath = modPath .. pgm.name .. "."
     end
-    shell.setAlias(pgm.name, "/" .. dirPath .. pgm.exec)
+    if pgm.exec then
+        shell.setAlias(pgm.name, "/" .. dirPath .. pgm.exec)
+    end
     if pgm.cmpt then
         local completer = pos.require(modPath .. pgm.cmpt).complete
         shell.setCompletionFunction(dirPath .. pgm.exec, completer)
