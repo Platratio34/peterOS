@@ -1,28 +1,28 @@
 ---@class NetInterface
----@field package __id number
----@field name string
----@field private __modem ModemPeripheral
----@field private __modemSide string
----@field private __log Logger
----@field private __ip number?
----@field private __subnetMask number?
----@field private __ipLeaseExpire number?
----@field private __hwAddress string
----@field private __hostname string?
----@field private __remoteKeys { [string]: string|byteArray }
----@field private __waitingMsgs NetMessage[]
----@field private __handlerId number?
----@field private __openPorts { [number]: boolean }
----@field private __alreadyProcessed { [string]: boolean }
----@field private __waitingForIPAccept boolean
----@field private __waitingForRenew number
----@field private __dnsCache { [string]: DNS.DNSRecord }
----@field private __dhcpIP number?
----@field private __config NetInterface.Config
----@field private __msgHandlers { [number]: fun(msg: NetMessage) }
----@field private __msgHandlerId number
----@field private __multicastSubscribers { [string]: { [string]: fun(ip: number, msg: NetMessage) } }
----@field private __multicastSubscriberCounts { [string]: number }
+---@field package __id number Interface ID (Unique)
+---@field name string The name of the interface. Should be unique
+---@field private __modem ModemPeripheral The modem the interface will use
+---@field private __modemSide string The name of the modem's side
+---@field private __log Logger The interface's logger
+---@field private __ip number? The IP address of the interface. May be `nil` if no IP was set or DHCP request failed (Numeric)
+---@field private __subnetMask number? The mask of the subnet of the interface (Numeric, a bitmask to get address on subnet)
+---@field private __ipLeaseExpire number? The UTC epoch time the current IP lease will expire
+---@field private __hwAddress string The Hardware address of the interface (address only, no prefix)
+---@field private __hostname string? The hostname the interface will report itself as
+---@field private __remoteKeys { [string]: string|byteArray } Collection of remote device public keys. Used for encrypting outgoing messages and verify incoming ones. <br/> Indexed by [Origin IP(N) or HW Addr] | [RTTP response domain] | [Origin domain] | [Origin IP(N) or HW Addr]:[Connection ID]
+---@field private __waitingMsgs NetMessage[] A queue of messages waiting to be processed
+---@field private __handlerId number? The ID of the event handler for modem messages
+---@field private __openPorts { [number]: boolean } A table of the currently open ports on this interface
+---@field private __alreadyProcessed { [string]: boolean } Exclusion table to prevent re-processing incoming messages. <br/> Indexed by [Origin IP(N) or HW Addr] | [RTTP response domain] | [Origin domain] | [Origin IP(N) or HW Addr]:[Connection ID]
+---@field private __waitingForIPAccept boolean If the interface has received an IP offer and is awaiting confirmation
+---@field private __waitingForRenew number If the interface has requested to renew it's IP lease and is awaiting confirmation
+---@field private __dnsCache { [string]: DNS.DNSRecord } Cache of DNS records
+---@field private __dhcpIP number? The IP address of the DHCP that issued the interface's IP address
+---@field private __config NetInterface.Config The configuration of the interface
+---@field private __msgHandlers { [number]: fun(msg: NetMessage) } Table of end-user message handlers
+---@field private __msgHandlerId number The ID of the next end-user message handler
+---@field private __multicastSubscribers { [string]: { [string]: fun(ip: number, msg: NetMessage) } } Table of end-user multicast message handlers. Indexed by numeric IP as string
+---@field private __multicastSubscriberCounts { [string]: number } Table of counts of multicast message handlers. Used for assigning handler IDs
 local NetInterface = {
     __config = {
         respondToPing = true
@@ -68,7 +68,7 @@ end
 function NetInterface:__init__(name, modem, ip, hwAddress)
     name = name or ('net_' .. self.__id)
     self.name = name
-    self.log = pos.Logger(('net_interface_%s.log'):format(name))
+    self.__log = pos.Logger(('net_interface_%s.log'):format(name))
 
     if modem == nil then
         local modems = { peripheral.find("modem", function(_, test)
@@ -77,7 +77,7 @@ function NetInterface:__init__(name, modem, ip, hwAddress)
         if #modems == 0 then
             modems = { peripheral.find("modem") }
             if #modems == 0 then
-                self.log:error("No Modem Attached")
+                self.__log:error("No Modem Attached")
                 error("No Modem Attached", 3)
             end
         end
@@ -86,7 +86,7 @@ function NetInterface:__init__(name, modem, ip, hwAddress)
         local side = modem
         modem = peripheral.wrap(side)
         if not modem then
-            self.log:error('Not modem attached to side %s', side)
+            self.__log:error('Not modem attached to side %s', side)
             error(('Not modem attached to side %s'):format(side), 3)
         end
         ---@cast modem ModemPeripheral
@@ -101,7 +101,7 @@ function NetInterface:__init__(name, modem, ip, hwAddress)
             self.__hwAddress = NetInterface.generateHWAddress()
             local f = fs.open(HW_ADDRESS_PATH, "w")
             if f == nil then
-                self.log:error("Failed to write Hardware Address, Network interface %s unavailable", name)
+                self.__log:error("Failed to write Hardware Address, Network interface %s unavailable", name)
                 error(("Failed to write Hardware Address, Network interface %s unavailable"):format(name), 3)
             end
             f.write(self.__hwAddress)
@@ -109,7 +109,7 @@ function NetInterface:__init__(name, modem, ip, hwAddress)
         else
             local f = fs.open(HW_ADDRESS_PATH, "r")
             if f == nil then
-                self.log:error("Failed to read Hardware Address, Network interface %s unavailable", name)
+                self.__log:error("Failed to read Hardware Address, Network interface %s unavailable", name)
                 error(("Failed to read Hardware Address, Network interface %s unavailable"):format(name), 3)
             end
             self.__hwAddress = f.readAll()
@@ -133,7 +133,7 @@ function NetInterface:__init__(name, modem, ip, hwAddress)
     self.__handlerId = pos.addEventHandler(function(event, handler) self:__onModemMessage(event) end, 'modem_message',
         name .. '_mmHandler')
     
-    self.log:info('Interface %s created', name)
+    self.__log:info('Interface %s created', name)
 end
 
 ---Set the config options for this interface
@@ -144,18 +144,18 @@ function NetInterface:setConfig(config)
         local configPath = config
         local f = fs.open(configPath, 'r')
         if not f then
-            self.log:error('Unable to load config from: %s; unable to open file', configPath)
+            self.__log:error('Unable to load config from: %s; unable to open file', configPath)
             error('Unable to load config from: '..configPath..'; Unable to open file')
         end
         config = textutils.unserialiseJSON(f.readAll())
         f.close()
         if not config then
-            self.log:error('Unable to load config from: %s; Config corrupted', configPath)
+            self.__log:error('Unable to load config from: %s; Config corrupted', configPath)
             return
         end
     end
     self.__config = config
-    self.log:info('Config set')
+    self.__log:info('Config set')
 end
 
 function NetInterface.generateHWAddress()
@@ -178,7 +178,7 @@ function NetInterface:__encryptMsg(dest, header, body)
     if header.domain then
         destIPC = header.domain
     elseif header.conId then
-        destIPC = destIPC .. header.conId
+        destIPC = destIPC .. ':' .. header.conId
     end
 
     header.publicKey = net.encrypt.getPublicKey()
@@ -234,7 +234,7 @@ function NetInterface:__sendMsg(port, dest, header, body, id)
             }
             self.__modem.transmit(msg.port, msg.port, msg)
         elseif self.__waitingForRenew + 1000 * 30 < os.epoch('utc') then
-            self.log:warn('Unable to renew IP address')
+            self.__log:warn('Unable to renew IP address')
             self.__waitingForRenew = nil
         end
     end
@@ -257,7 +257,7 @@ function NetInterface:__sendMsg(port, dest, header, body, id)
     end
 
     local msg = {
-        origin = self.__ip or self.__hwAddress,
+        origin = self.__ip or ('hw:'..self.__hwAddress),
         dest = destIP,
         port = port,
         header = header,
@@ -265,7 +265,7 @@ function NetInterface:__sendMsg(port, dest, header, body, id)
         msgid = id
     }
 
-    if destIP == self.__ip or destIP == self.__hwAddress then
+    if destIP == self.__ip or destIP == ('hw:'..self.__hwAddress) then
         self:__onMsg(msg)
         return id
     end
@@ -331,23 +331,24 @@ function NetInterface:setup()
         end
         for i = 1, 3 do
             self:__sendMsg(10000, -1, { type = "net.ip.req" }, ipGetBody)
-            if self:waitForMessage(net.standardPorts.network, function(port, msg)
-                    if msg.dest == "hw:" .. self.__hwAddress and msg.header.type == "net.ip.acp.return" then
-                        return false
-                    end
-                    return true
-                end, 10) == "timeout" then
-                self.log:error("Failed to get IP address, Trying again in 30 seconds")
+            local rsp = self:waitForMessage(net.standardPorts.network, function(port, msg)
+                if msg.dest == ('hw:'..self.__hwAddress) and msg.header.type == "net.ip.acp.return" then
+                    return false
+                end
+                return true
+            end, 10)
+            if rsp == "timeout" then
+                self.__log:error("Failed to get IP address: timeout; Trying again in 30 seconds")
                 -- return false
             else
-                self.log:info('Got IP address: ' .. net.ipFormat(self.__ip))
+                self.__log:info('Got IP address: ' .. net.ipFormat(self.__ip))
                 break
             end
             os.sleep(30)
         end
-        if not self.__ip or type(self.__ip) == 'number' then
+        if not self.__ip or type(self.__ip) ~= 'number' then
             self.__ip = nil
-            self.log:error("Failed to get IP address, Network module unavailable")
+            self.__log:error("Failed to get IP address, Network module unavailable")
             error("Failed to get IP address, Network module unavailable", 0)
             return false
         end
@@ -417,13 +418,14 @@ function NetInterface:__onModemMessage(event)
 
     ---@cast msg NetMessage
 
+    -- [Origin IP(N) or HW Addr] | [RTTP response domain] | [Origin domain] | [Origin IP(N) or HW Addr]:[Connection ID]
     local origin = msg.origin .. '' ---@type string
     if (msg.header--[[@as RttpMessage.Header]]).rspDomain then
         origin = (msg.header--[[@as RttpMessage.Header]]).rspDomain --[[@as string]]
     elseif msg.header.originDomain then
         origin = msg.header.originDomain --[[@as string]]
     elseif msg.header.conId then
-        origin = origin .. msg.header.conId
+        origin = origin .. ':' .. msg.header.conId
     end
 
     if self.__alreadyProcessed[origin] then
@@ -436,63 +438,63 @@ function NetInterface:__onModemMessage(event)
 
         if not oPK then
             if msg.header.certificate then
-                self.log:warn('Received message with certificate from ' ..
+                self.__log:warn('Received message with certificate from ' ..
                     net.ipFormat(msg.origin) .. ', but could not validate (msgid=' .. msg.msgid .. ')')
             else
-                self.log:warn('Received message marked as encrypted from ' ..
+                self.__log:warn('Received message marked as encrypted from ' ..
                     net.ipFormat(msg.origin) .. ', but could not validate key (msgid=' .. msg.msgid .. ')')
             end
             return
         end
 
         if (msg.header.publicKey and msg.header.certificate) and (not net.encrypt.keyMatch(msg.header.publicKey, oPK)) then
-            self.log:warn('Received message from ' .. origin .. ' but provided key does to match certificate')
-            self.log:debug(textutils.serialiseJSON(msg.header.publicKey))
-            self.log:debug('vs')
-            self.log:debug(textutils.serialiseJSON(oPK))
+            self.__log:warn('Received message from ' .. origin .. ' but provided key does to match certificate')
+            self.__log:debug(textutils.serialiseJSON(msg.header.publicKey))
+            self.__log:debug('vs')
+            self.__log:debug(textutils.serialiseJSON(oPK))
             return
         end
 
         if (not self.__remoteKeys[origin]) or msg.header.certificate then
             self.__remoteKeys[origin] = oPK
         elseif not net.encrypt.keyMatch(oPK, self.__remoteKeys[origin]) then
-            self.log:warn('Received message from ' .. origin .. ' but provided key does to match cached version')
-            self.log:debug(textutils.serialiseJSON(self.__remoteKeys[origin]))
-            self.log:debug('vs')
-            self.log:debug(textutils.serialiseJSON(oPK))
+            self.__log:warn('Received message from ' .. origin .. ' but provided key does to match cached version')
+            self.__log:debug(textutils.serialiseJSON(self.__remoteKeys[origin]))
+            self.__log:debug('vs')
+            self.__log:debug(textutils.serialiseJSON(oPK))
             -- prevent bad version of message from getting through
             return
         end
 
         if msg.header.encrypted then
             if not msg.body then
-                self.log:warn('Received message marked as encrypted from ' ..
+                self.__log:warn('Received message marked as encrypted from ' ..
                     net.ipFormat(msg.origin) .. ', but did not have body (msgid=' .. msg.msgid .. ')')
             elseif not msg.body.cipher then
-                self.log:warn('Received message marked as encrypted from ' ..
+                self.__log:warn('Received message marked as encrypted from ' ..
                     net.ipFormat(msg.origin) .. ', but did not have cipher in body (msgid=' .. msg.msgid .. ')')
             elseif not msg.body.sig then
-                self.log:warn('Received message marked as encrypted from ' ..
+                self.__log:warn('Received message marked as encrypted from ' ..
                     net.ipFormat(msg.origin) .. ', but did not have signature in body (msgid=' .. msg.msgid .. ')')
             else
                 local suc, body = net.encrypt.decrypt(msg.body.cipher, msg.body.sig, oPK)
                 if suc then
                     if not body then
-                        self.log:warn('Failed to decrypt msg from ' ..
+                        self.__log:warn('Failed to decrypt msg from ' ..
                             net.ipFormat(msg.origin) .. ', body was malformed')
                         return
                     end
                     msg.body = body
                     if msg.body.cipher then
-                        self.log:warn('Message had a cipher element in body')
+                        self.__log:warn('Message had a cipher element in body')
                     end
                 else
-                    self.log:warn('Failed to decrypt msg from ' .. net.ipFormat(msg.origin))
+                    self.__log:warn('Failed to decrypt msg from ' .. net.ipFormat(msg.origin))
                     if net.ignoreMsgOnDecryptFail then return end
                 end
             end
         elseif msg.body and msg.body.cipher then
-            self.log:warn("Message had cipher body but was not encrypted")
+            self.__log:warn("Message had cipher body but was not encrypted")
         end
     end
 
@@ -504,7 +506,7 @@ function NetInterface:__onModemMessage(event)
     if msg.dest == 'hw:' .. self.__hwAddress then
         if msg.header.type == 'net.ip.acp.return' then
             if self.__waitingForIPAccept then
-                self.log:info('DHCP accept')
+                self.__log:info('DHCP accept')
                 self.__ip = msg.body.ip
                 self.__subnetMask = msg.body.mask
                 self.__ipLeaseExpire = msg.body.time
@@ -518,7 +520,7 @@ function NetInterface:__onModemMessage(event)
             if not self.__ip and not self.__waitingForIPAccept then
                 self.__waitingForIPAccept = true
 
-                self.log:info("Accepting IP offer of " ..
+                self.__log:info("Accepting IP offer of " ..
                     net.ipFormat(msg.body.ip) .. " from " .. net.ipFormat(msg.origin))
 
                 msg:reply(net.standardPorts.network, { type = 'net.ip.acp' }, { hwAddr = self.__hwAddress })
@@ -530,7 +532,7 @@ function NetInterface:__onModemMessage(event)
     elseif msg.dest == self.__ip then
         if port == net.standardPorts.network and msg.header.type == "ping" and self.__config.respondToPing then
             net.reply(net.standardPorts.network, msg, { type = "ping-return" }, {})
-            self.log:debug("Got pinged by " .. net.ipFormat(msg.origin))
+            self.__log:debug("Got pinged by " .. net.ipFormat(msg.origin))
         end
 
         if msg.header.type == "net.ip.check" then
@@ -542,7 +544,7 @@ function NetInterface:__onModemMessage(event)
                 self.__subnetMask = msg.body.mask
                 self.__ipLeaseExpire = msg.body.time
                 self.__waitingForRenew = nil
-                self.log:info('Renewed IP address')
+                self.__log:info('Renewed IP address')
                 return
             end
         else
@@ -563,7 +565,7 @@ function NetInterface:__onMsg(msg)
     for id, handler in pairs(self.__msgHandlers) do
         local suc, error = pcall(handler, msg)
         if not suc then
-            self.log:warn('Error in msg handler: %s', error)
+            self.__log:warn('Error in msg handler: %s', error)
         end
     end
 end
@@ -590,6 +592,10 @@ function NetInterface:getDNSRecord(hostname)
             dnsRecord = nil
         end
     end
+    if not self.__dhcpIP then
+        self.__log:error('Error resolving hostname "%s"; No known DNS IP', hostname)
+        return nil
+    end
     
     if not dnsRecord then
         self:__sendMsg(net.standardPorts.network, self.__dhcpIP, { type = 'net.dns.get' }, { domain = hostname })
@@ -597,12 +603,12 @@ function NetInterface:getDNSRecord(hostname)
             return msg.origin == self.__dhcpIP and msg.header.type == 'net.dns.get.return'
         end, net.DEFAULT_TIMEOUT)
         if msg == 'timeout' then
-            self.log:warn('Unable to resolve hostname "%s"; no response from DNS', hostname)
+            self.__log:warn('Unable to resolve hostname "%s"; no response from DNS', hostname)
             return nil
         end
         ---@cast msg DNS.Message
         if msg.header.code == 'not_found' then
-            self.log:warn('Unable to resolve hostname "%s"', hostname)
+            self.__log:warn('Unable to resolve hostname "%s"', hostname)
             return nil
         end
         dnsRecord = msg.body.record
@@ -610,7 +616,7 @@ function NetInterface:getDNSRecord(hostname)
     end
 
     if not dnsRecord then
-        self.log:warn('Unable to resolve hostname "%s"', hostname)
+        self.__log:warn('Unable to resolve hostname "%s"', hostname)
         return nil
     end
 
@@ -640,7 +646,7 @@ function NetInterface:resolveHostname(hostname)
         return self:resolveHostname(record.pointer)
     end
 
-    self.log:error('Tried to resolve hostname, but received unknown record type: "%s"', record.type)
+    self.__log:error('Tried to resolve hostname, but received unknown record type: "%s"', record.type)
     return -1
 end
 
@@ -897,11 +903,11 @@ function NetInterface:ping(dest, timeout)
     local iPStr = net.ipFormat(self:resolveHostname(dest))
     local rt = self:sendSync(net.standardPorts.network, dest, 'ping', {}, timeout)
     if type(rt) ~= 'table' then
-        self.log:warn('Error pining %s: %s', iPStr, rt)
+        self.__log:warn('Error pining %s: %s', iPStr, rt)
         return -1, rt --[[@as string]]
     end
     local elapsed = os.epoch('utc') - sTime
-    self.log:debug('Received ping return from %s after %ss', iPStr, elapsed / 1000)
+    self.__log:debug('Received ping return from %s after %ss', iPStr, elapsed / 1000)
     return elapsed
 end
 

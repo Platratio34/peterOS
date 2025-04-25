@@ -101,7 +101,7 @@ end
 ---Gets the current IP of the computer (numeric)
 ---@return NetAddress ip The numeric IP of the computer
 net.getIP = function()
-    return defaultInterface:getIp() or 0
+    return defaultInterface:getIp() or -1
 end
 ---Get the address mask of the local network (numeric)
 ---@return number? mask Numeric IP subnet mask (ie 0xff00 for 255:255:0:0)
