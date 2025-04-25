@@ -482,6 +482,11 @@ local function handler(msg)
     local sysTime = os.epoch()
 
     if msg.header.type == "net.ip.req" then -- Request for DHCP server
+        if (type(msg.origin) ~= "string") then
+            log:warn('Asked for IP, but requester already had IP; Skipping')
+            return
+        end
+        
         local lease = leases[msg.origin]
 
         if lease ~= nil and (lease.time == -1 or lease.time > sysTime) then -- If there is already a lease for this computer
@@ -608,7 +613,7 @@ local function handler(msg)
                 return
             else
                 net.reply(10000, msg, { type = "net.ip.renew.return" }, { action = "reget" })
-                log:info("IP in use twice: " .. msg.origin)
+                log:info("IP renew request: IP in use twice: " .. msg.origin)
             end
         end
     elseif msg.header.type == "net.dns.get" then -- DNS resolve domain names

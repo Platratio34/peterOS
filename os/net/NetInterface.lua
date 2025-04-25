@@ -516,7 +516,6 @@ function NetInterface:__onModemMessage(event)
                 self.__dhcpIP = msg.origin --[[@as number]]
 
                 self.__waitingForIPAccept = false
-                return
             end
         elseif msg.header.type == 'net.ip.req.return' then
             if (not self.__ip) and (not self.__waitingForIPAccept) then
@@ -526,8 +525,6 @@ function NetInterface:__onModemMessage(event)
                     net.ipFormat(msg.body.ip) .. " from " .. net.ipFormat(msg.origin))
 
                 self:__sendMsg(net.standardPorts.network, msg.origin, { type = 'net.ip.acp' }, { hwAddr = self.__hwAddress })
-                -- msg:reply(net.standardPorts.network, { type = 'net.ip.acp' }, { hwAddr = self.__hwAddress })
-                return
             end
         end
 
