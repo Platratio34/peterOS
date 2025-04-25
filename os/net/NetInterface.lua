@@ -112,7 +112,7 @@ function NetInterface:__init__(name, modem, ip, hwAddress)
                 self.__log:error("Failed to read Hardware Address, Network interface %s unavailable", name)
                 error(("Failed to read Hardware Address, Network interface %s unavailable"):format(name), 3)
             end
-            self.__hwAddress = f.readAll()
+            self.__hwAddress = f.readAll():gsub('\n','')
             f.close()
         end
     end
@@ -308,14 +308,15 @@ function NetInterface:waitForMessage(port, check, timeout)
         local event = { os.pullEvent() }
         if event[1] == 'timer' and event[2] == timeout then
             return 'timeout'
-        elseif event[1] == 'modem_message' then
-            -- local _, side, rPort, _, msg = unpack(event)
-            -- if not port or (msg.port == port) then
-            --     if check and not check(msg.port, msg) then
-            --         table.remove(self.__waitingMsgs, i)
-            --         return msg
-            --     end
-            -- end
+        elseif event[1] == net.NET_MESSAGE_EVENT then
+            ---@cast event {[1]: NetMessage, [2]: string}
+            local _, msg, iName = table.unpack(event)
+            ---@cast msg NetMessage
+            if iName == self.name then
+                if (not port or msg.port == port) and (not check or (not check(msg.port, msg))) then
+                    return msg
+                end
+            end
         end
     end
 end
@@ -330,6 +331,9 @@ function NetInterface:setup()
             ipGetBody.hostname = self.__config.hostname
         end
         for i = 1, 3 do
+            if i > 1 then
+                sleep(30)
+            end
             self:__sendMsg(10000, -1, { type = "net.ip.req" }, ipGetBody)
             local rsp = self:waitForMessage(net.standardPorts.network, function(port, msg)
                 if msg.dest == ('hw:'..self.__hwAddress) and msg.header.type == "net.ip.acp.return" then
@@ -339,12 +343,10 @@ function NetInterface:setup()
             end, 10)
             if rsp == "timeout" then
                 self.__log:error("Failed to get IP address: timeout; Trying again in 30 seconds")
-                -- return false
             else
                 self.__log:info('Got IP address: ' .. net.ipFormat(self.__ip))
                 break
             end
-            os.sleep(30)
         end
         if not self.__ip or type(self.__ip) ~= 'number' then
             self.__ip = nil
@@ -428,10 +430,10 @@ function NetInterface:__onModemMessage(event)
         origin = origin .. ':' .. msg.header.conId
     end
 
-    if self.__alreadyProcessed[origin] then
+    if self.__alreadyProcessed[origin..':'..msg.msgid] then
         return
     end
-    self.__alreadyProcessed[origin] = true
+    self.__alreadyProcessed[origin..':'..msg.msgid] = true
 
     if msg.header.publicKey or msg.header.certificate then
         local oPK = net.certificate.getKey(msg)
@@ -517,13 +519,14 @@ function NetInterface:__onModemMessage(event)
                 return
             end
         elseif msg.header.type == 'net.ip.req.return' then
-            if not self.__ip and not self.__waitingForIPAccept then
+            if (not self.__ip) and (not self.__waitingForIPAccept) then
                 self.__waitingForIPAccept = true
 
                 self.__log:info("Accepting IP offer of " ..
                     net.ipFormat(msg.body.ip) .. " from " .. net.ipFormat(msg.origin))
 
-                msg:reply(net.standardPorts.network, { type = 'net.ip.acp' }, { hwAddr = self.__hwAddress })
+                self:__sendMsg(net.standardPorts.network, msg.origin, { type = 'net.ip.acp' }, { hwAddr = self.__hwAddress })
+                -- msg:reply(net.standardPorts.network, { type = 'net.ip.acp' }, { hwAddr = self.__hwAddress })
                 return
             end
         end
