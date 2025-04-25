@@ -150,11 +150,8 @@ if fs.exists(dnsPath) then
 end
 
 local function save()
-    local f = fs.open(leasesPath, "w")
-    if f == nil then
-        error("Unable to open lease file")
-        return
-    end
+    sleep(0)
+    log:info('Saving leases file')
     local tl = {}
     for n, record in pairs(leases) do
         local tr = {}
@@ -169,15 +166,28 @@ local function save()
     end
     local t = textutils.serialiseJSON(tl)
     t = string.gsub(t, '},', '},\n')
-    f.write(t)
-    f.close()
-end
-local function saveDns()
-    local f = fs.open(dnsPath, "w")
+    if (t == '') then
+        log:error('Error saving lease file; File was blank')
+        return
+    end
+    if fs.exists(leasesPath) then
+        local oldPath = leasesPath..'.old'
+        if fs.exists(oldPath) then
+            fs.delete(oldPath)
+        end
+        fs.copy(leasesPath, oldPath)
+    end
+    local f = fs.open(leasesPath, "w")
     if f == nil then
         error("Unable to open lease file")
         return
     end
+    f.write(t)
+    f.close()
+end
+local function saveDns()
+    sleep(0)
+    log:info("Saving DNS file")
     local tDns = {}
     for n, record in pairs(dns) do
         local tr = {}
@@ -192,6 +202,11 @@ local function saveDns()
     end
     local t = textutils.serialiseJSON(tDns)
     t = string.gsub(t, '},', '},\n')
+    local f = fs.open(dnsPath, "w")
+    if f == nil then
+        error("Unable to open lease file")
+        return
+    end
     f.write(t)
     f.close()
 end
