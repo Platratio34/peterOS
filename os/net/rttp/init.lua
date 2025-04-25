@@ -188,7 +188,7 @@ rttp.stringMessage = function(msg)
     else
         str = str..net.ipFormat(msg.dest)
     end
-    str = str .. msg.header.path.." | "
+    str = str .. (msg.header.path or '/').." | "
     str = str .. msg.header.method .. ", "
     str = str .. msg.header.contentType
     str = str .. " | "

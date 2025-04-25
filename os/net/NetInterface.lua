@@ -887,7 +887,7 @@ function NetInterface:reply(port, old, header, body)
         header.destConId = old.header.conId
     end
     if old.header.domain then
-        header.domain = old.header.domain
+        header.domain = old.header.originDomain
     end
 
     return self:__sendMsg(port, old.origin, header, body, old.msgid)

@@ -238,6 +238,7 @@ net.setup = function(mdm, ip)
         return defaultInterface:setup()
     else
         defaultInterface = net.NetInterface(nil, mdm, ip)
+        defaultInterface:setConfig('/home/.appdata/net.cfg')
         msgHandlerId = defaultInterface:addMsgHandler(onMsg)
     end
     return defaultInterface:setup()
