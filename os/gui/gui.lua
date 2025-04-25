@@ -227,6 +227,14 @@ function gui.run(func)
     _gui.lError = {}
     gui.running = true
     gui.redrawWindows()
+    local p = print
+    print = function() end
+    
+    local w = write
+    write = function() end
+    
+    local pE = printError
+    printError = function() end
     while gui.running do
         local event = { os.pullEventRaw() }
         if event[1] == 'terminate' then
@@ -263,6 +271,10 @@ function gui.run(func)
     term.setTextColor(colors.white)
     term.clear()
     term.setCursorPos(1, 1)
+
+    print = p
+    write = w
+    printError = pE
     for _,error in pairs(_gui.lError) do
         printError(error)
     end
