@@ -66,6 +66,7 @@
         <xs:simpleContent>
             <xs:extension base="rtml.element">
                 <xs:attribute name="action" type="rtml.button.action" use="required" />
+                <xs:attribute name="href" type="xs:string" use="optional" />
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>

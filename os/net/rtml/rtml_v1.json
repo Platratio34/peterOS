@@ -5,12 +5,12 @@
         "x": "number?",
         "y": "number?",
         "color": "string?",
-        "bgColor": "number?",
+        "bgColor": "string?",
         "id": "string?"
     },
-    "text": "rtmlElement",
+    "text": ["rtmlElement", {}],
     "link": [ "rtmlElement", { "href": "string" } ],
-    "dom-link": "link",
+    "dom-link": ["link", {}],
     "input": [ "rtmlElement", { "len": "number", "hide":"boolean?", "next": "string?" } ],
     "button": [ "rtmlElement", { "action": "string" } ]
 }

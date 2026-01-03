@@ -1,7 +1,7 @@
 ---@module 'xml'
 local xml = {
     PARENT_ELEMENT_NAME = "_xml_",
-    XMLSchema = dofile('schema.lua') ---@type XMLSchema
+    XMLSchema = dofile('/os/lib/xml/schema.lua') ---@type XMLSchema
 }
 
 ---@class XMLElement XML element
@@ -187,6 +187,7 @@ function XMLElement:verify(schema)
     if not v then
         return v, e
     end
+
     for _, el in pairs(self.children) do
         v, e = el:verify(schema)
         if not v then
@@ -205,6 +206,7 @@ function XMLElement:fix(schema)
     if not v then
         return v, e
     end
+    
     for _, el in pairs(self.children) do
         v, e = el:fix(schema)
         if not v then

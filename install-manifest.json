@@ -94,7 +94,8 @@
         "os/bin/osUpdate.lua",
         "os/bin/ping.lua",
         "os/bin/useradd.lua",
-        "os/bin/passwd.lua"
+        "os/bin/passwd.lua",
+        "os/bin/ipconfig.lua"
     ],
     "pgms":[
         "pgm-get",

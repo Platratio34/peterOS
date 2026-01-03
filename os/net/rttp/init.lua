@@ -22,7 +22,7 @@ _G.rttp = {}
 ---@param contentType string Content type (none, text/plain, table/rtml, ...)
 ---@param body any Message body
 ---@param cookies nil|table Optional. Cookie table
----@return integer id Message Id
+---@return integer|string id Message Id or error string
 rttp.send = function(dest, path, method, contentType, body, cookies)
     expect(1, dest, "string", "number")
     expect(2, path, "string")
@@ -55,13 +55,16 @@ rttp.sendSync = function(dest, path, method, contentType, body, cookies, timeout
     expect(4, contentType, "string")
     expect(5, body, "string", "number", "table")
 
-    local head = {
+    local head = { ---@type RttpMessage.Header
         type = "rttp",
         method = method,
         contentType = contentType,
         path = path,
-        cookies = cookies
+        cookies = cookies,
     }
+    if type(dest) == "string" then
+        head.domain = dest
+    end
     local msg = net.sendAdvSync(10080, dest, head, body, timeout)
     ---@cast msg RttpMessage
     return msg
@@ -168,12 +171,25 @@ rttp.codeName = function(code)
     end
 end
 
+local IGNORED_HEADERS = {
+    type = true,
+    code = true,
+    method = true,
+    port = true,
+    conId = true,
+    destConId = true,
+    rspDomain = true,
+    domain = true,
+    path = true,
+    publicKey = true
+}
+
 ---Returns a string representation of an RTTP message
 ---@param msg RttpMessage Message to serialize
 ---@return string message String version of message
 rttp.stringMessage = function(msg)
     expect(1, msg, "table")
-    if msg.header.type ~= "rttp" and msg.header.type "rttps" then
+    if msg.header.type ~= "rttp" and msg.header.type ~= "rttps" then
         return "Unknown message type"
     end
     local str = ""
@@ -188,9 +204,17 @@ rttp.stringMessage = function(msg)
     else
         str = str..net.ipFormat(msg.dest)
     end
-    str = str .. (msg.header.path or '/').." | "
-    str = str .. msg.header.method .. ", "
-    str = str .. msg.header.contentType
+    str = str .. (msg.header.path or '/') .. " | "
+    if msg.header.method then
+        str = str .. msg.header.method
+    elseif msg.header.code then
+        str = str .. msg.header.code .. ": " .. rttp.codeName(msg.header.code)
+    end
+    for key, val in pairs(msg.header) do
+        if not IGNORED_HEADERS[key] then
+            str = str .. '; ' .. key .. '=' .. textutils.serialiseJSON(val)
+        end
+    end
     str = str .. " | "
     str = str .. textutils.serialise(msg.body)
     return str
@@ -281,7 +305,7 @@ end
 ---@param dest string|integer Destination hostname, IP address, or HW address
 ---@param path string URI path
 ---@param cookies nil|table Optional. Cookie table
----@return integer id Message Id
+---@return integer|string id Message Id, or error string
 rttp.get = function(dest, path, cookies)
     return rttp.send(dest, path, "GET", "none", {}, cookies)
 end
@@ -300,7 +324,7 @@ end
 ---@param cType string Content type (none, text/plain, table/rtml, ...)
 ---@param body any Message body
 ---@param cookies nil|table Optional. Cookie table
----@return integer id Message Id
+---@return integer|string id Message Id, or error string
 rttp.post = function(dest, path, cType, body, cookies)
     return rttp.send(dest, path, "POST", cType, body, cookies)
 end

@@ -64,6 +64,9 @@ function Logger:__init__(path, printToConsole, copyOld)
         fs.copy(path, oldPath)
     end
     self.__file = fs.open(path, 'w') --[[@as fs.WriteHandle]]
+    if not self.__file then
+        error("Error opening log file for writing", 2)
+    end
 end
 
 ---Checks if the file is currently open for writing

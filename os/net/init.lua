@@ -244,6 +244,10 @@ net.setup = function(mdm, ip)
     return defaultInterface:setup()
 end
 
+function net.setDefaultInterface(interface)
+    defaultInterface = interface
+end
+
 -- +----------------+
 -- | Send functions |
 -- +----------------+
@@ -253,7 +257,7 @@ end
 ---@param dest number|string Destination IP address, HW address, or hostname
 ---@param msgType string Message type
 ---@param body any Message body
----@return number id Message ID or -1 on error
+---@return number|string id Message ID, or error string
 net.send = function(port, dest, msgType, body)
     return defaultInterface:send(port, dest, msgType, body)
 end
@@ -274,7 +278,7 @@ end
 ---@param dest NetAddress|string Destination IP address, HW address, or hostname
 ---@param head NetMessage.Header Message header, should include type parameter
 ---@param body any Message body
----@return number id Message ID or -1 on error
+---@return number|string id Message ID, or error string
 net.sendAdv = function(port, dest, head, body)
     return defaultInterface:sendAdv(port, dest, head, body)
 end
@@ -398,7 +402,7 @@ net.stringMessage = function(msg)
     str = str .. ":" .. msg.port
     str = str .. " | #" .. msg.msgid
     if msg.header.conId then
-        str = str .. ":" .. msg.header.conId
+        str = str .. " c#" .. msg.header.conId
     end
     if #msg.header == 1 then
         str = str .. " | " .. msg.header.type .. " : "

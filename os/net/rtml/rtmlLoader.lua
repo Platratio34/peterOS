@@ -7,7 +7,7 @@ local loader = {}
 
 local RTML_V1_SCHEMA
 local function loadSchemas()
-    local v1F = fs.open('/os/net/rtml/rtml_v1.json')
+    local v1F = fs.open('/os/net/rtml/rtml_v1.json', 'r')
     if v1F then
         local v1S = textutils.unserialiseJSON(v1F.readAll())
         v1F.close()
@@ -158,13 +158,14 @@ local function loadV1(rtml, inXml)
                     else
                         nextScreenLine = math.max(nextScreenLine, el.y + 1)
                     end
+                    el.text = c2.inner
                     table.insert(rtml, el)
                 elseif c2.name == 'input' then
                     if not c2.selfClosing then
                         error('Malformed RTML, `input` tags must be self closing', 3)
                     end
                     local el = c2.attributes --[[@as RTMLElement]] or {}
-                    el.type = net.rtml.TYPE_BUTTON
+                    el.type = net.rtml.TYPE_INPUT
                     if not el.x then
                         el.x = 1
                     end
@@ -191,6 +192,7 @@ function loader.load(file)
         local rtml = {}
         local rtmlTag = xmlFile[1]
         rtml.header = rtmlTag.attributes or { version = 1 }
+        rtml.header.version = tonumber(rtml.header.version) or rtml.header.version
         if rtml.header.version == 1 then
             loadV1(rtml, xmlFile)
         else

@@ -50,7 +50,12 @@ end
 ---Initializes the schema object
 ---@package
 function XMLSchema:__init__()
-    self.elements = {}
+    self.elements = {
+        ["_xml_"] = {
+            attributes = {},
+            parent = nil
+        }
+    }
 end
 
 ---Add an element to this schema
@@ -84,7 +89,7 @@ end
 function XMLSchema:checkElement(element)
     local elType = self.elements[element.name]
     if not elType then
-        return false, 'unknown element'
+        return false, 'unknown element `'..element.name..'`'
     end
     return self:__checkElement(element, elType)
 end
@@ -103,8 +108,19 @@ function XMLSchema:__checkElement(element, elType)
             end
         else
             local atrType = type(element.attributes[atrName])
-            if atrType ~= atr.type then
-                return false, ('attribute `%s` must be %s, was %s'):format(atrName, atr.type .. (atr.optional and '?' or ''), atrType)
+            if atrType ~= "nil" and atrType ~= atr.type then
+                local v = element.attributes[atrName]
+                if atrType == 'string' and atr.type == 'number' then
+                    if not tonumber(v) then
+                        return false, ('attribute `%s` must be %s, was %s, and could not be converted'):format(atrName, atr.type .. (atr.optional and '?' or ''), atrType)
+                    end
+                elseif atrType == 'string' and atr.type == 'boolean' then
+                    if v ~= 'false' and v ~= 'true' then
+                        return false, ('attribute `%s` must be %s, was %s, and could not be converted'):format(atrName, atr.type .. (atr.optional and '?' or ''), atrType)
+                    end
+                else
+                    return false, ('attribute `%s` must be %s, was %s'):format(atrName, atr.type .. (atr.optional and '?' or ''), atrType)
+                end
             end
         end
     end
@@ -122,7 +138,7 @@ end
 function XMLSchema:checkElementAndFix(element)
     local elType = self.elements[element.name]
     if not elType then
-        return false, 'unknown element'
+        return false, 'unknown element: `'..element.name..'`'
     end
     return self:__checkElementAndFix(element, elType)
 end
@@ -135,20 +151,20 @@ end
 ---@return string error Schema error **OR** `''`
 function XMLSchema:__checkElementAndFix(element, elType)
     for atrName, atr in pairs(elType.attributes) do
-        if not atr.optional then
-            if not element.attributes[atrName] then
-                return false, ('missing required attribute `%s` in element `%s`'):format(atrName, element.name)
-            end
+        if not atr.optional and not element.attributes[atrName] then
+            return false, ('missing required attribute `%s` in element `%s`'):format(atrName, element.name)
         else
             local atrValue = element.attributes[atrName]
             local atrType = type(atrValue)
-            if atrType == 'string' and atr.type ~= 'string' then
+            if(atrType == "nil") then
+
+            elseif atrType == 'string' and atr.type ~= 'string' then
                 if atr.type == 'number' then
                     atrValue = tonumber(atrValue)
                     if not atrValue then
                         return false,
-                        ('attribute `%s` in `%s` must be %s'):format(atrName, element.name,
-                                atr.type .. (atr.optional and '?' or ''))
+                        ('attribute `%s` in `%s` must be %s, was %s'):format(atrName, element.name,
+                                atr.type .. (atr.optional and '?' or ''), atrType)
                     end
                 elseif atr.type == 'boolean' then
                     if atrValue == 'true' then
@@ -156,15 +172,25 @@ function XMLSchema:__checkElementAndFix(element, elType)
                     elseif atrValue == 'false' then
                         atrValue = false
                     else
-                        return false, ('attribute `%s` in `%s` must be %s'):format(atrName, element.name, atr.type .. (atr.optional and '?' or ''))
+                        return false,
+                            ('attribute `%s` in `%s` must be %s, was %s'):format(atrName, element.name,
+                                atr.type .. (atr.optional and '?' or ''), atrType)
                     end
+                else
+                    return false,
+                            ('attribute `%s` in `%s` must be %s, was %s'):format(atrName, element.name,
+                                atr.type .. (atr.optional and '?' or ''), atrType)
                 end
                 element.attributes[atrName] = atrValue
+            elseif atrType ~= atr.type then
+                return false,
+                            ('attribute `%s` in `%s` must be %s, was %s'):format(atrName, element.name,
+                                atr.type .. (atr.optional and '?' or ''), atrType)
             end
         end
     end
     if elType.parent then
-        return XMLSchema:__checkElement(element, self.elements[elType.parent])
+        return XMLSchema:__checkElementAndFix(element, self.elements[elType.parent])
     end
     return true, ''
 end
