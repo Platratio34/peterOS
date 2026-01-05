@@ -236,7 +236,7 @@ end
 function NetInterface:__sendMsg(port, dest, header, body, id)
     expect(1, port, 'number')
     expect(2, dest, 'number', 'string')
-    expect(3, header, 'table')
+    expect(3, header, 'table') ---@cast header NetMessage.Header
     expect(4, body, 'string', 'table')
     expect(5, id, 'number', 'nil')
 
@@ -268,6 +268,7 @@ function NetInterface:__sendMsg(port, dest, header, body, id)
 
     local destIP = dest
     if type(dest) == 'string' and not dest:start('hw:') then
+        header.domain = dest
         local ip = self:resolveHostname(dest)
         if ip == -1 then
             self.__log:warn('DNS resolution failure on send to %s', dest)
@@ -292,6 +293,7 @@ function NetInterface:__sendMsg(port, dest, header, body, id)
         body = body,
         msgid = id
     }
+    ---@cast msg NetMessage
 
     if destIP == self.__ip or destIP == ('hw:'..self.__hwAddress) then -- loopback
         local interface = self
