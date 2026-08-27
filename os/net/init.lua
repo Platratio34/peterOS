@@ -30,6 +30,7 @@ local cfg = {
     hostname = "",
     respondToPing = true,
     originHostname = nil,
+    side = ''
 }
 local config = pos.Config(cfgPath, cfg, true)
 cfg = config.data
@@ -237,8 +238,7 @@ net.setup = function(mdm, ip)
     if defaultInterface then
         return defaultInterface:setup()
     else
-        defaultInterface = net.NetInterface(nil, mdm, ip)
-        defaultInterface:setConfig('/home/.appdata/net.cfg')
+        defaultInterface = net.NetInterface(nil, mdm, ip, nil, '/home/.appdata/net.cfg')
         msgHandlerId = defaultInterface:addMsgHandler(onMsg)
     end
     return defaultInterface:setup()

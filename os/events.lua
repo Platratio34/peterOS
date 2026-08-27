@@ -12,7 +12,7 @@ local mainThread = coroutine.running()
 local coroutineYield = coroutine.yield
 local function yield(sFilter)
     local co = coroutine.running()
-    if(coroutine.status(mainThread) ~= "running") then
+    if(coroutine.status(mainThread) == "dead") then
         mainThread = co
     end
     if(mainThread ~= co) then

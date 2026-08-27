@@ -1,28 +1,28 @@
 ---@class NetInterface
 ---@field package __id number Interface ID (Unique)
 ---@field name string The name of the interface. Should be unique
----@field private __modem ModemPeripheral The modem the interface will use
----@field private __modemSide string The name of the modem's side
----@field private __log Logger The interface's logger
----@field private __ip number? The IP address of the interface. May be `nil` if no IP was set or DHCP request failed (Numeric)
----@field private __subnetMask number? The mask of the subnet of the interface (Numeric, a bitmask to get address on subnet)
----@field private __ipLeaseExpire number? The UTC epoch time the current IP lease will expire
----@field private __hwAddress string The Hardware address of the interface (address only, no prefix)
----@field private __hostname string? The hostname the interface will report itself as
----@field private __remoteKeys { [string]: string|byteArray } Collection of remote device public keys. Used for encrypting outgoing messages and verify incoming ones. <br/> Indexed by [Origin IP(N) or HW Addr] | [RTTP response domain] | [Origin domain] | [Origin IP(N) or HW Addr]:[Connection ID]
----@field private __waitingMsgs NetMessage[] A queue of messages waiting to be processed
----@field private __handlerId number? The ID of the event handler for modem messages
----@field private __openPorts { [number]: boolean } A table of the currently open ports on this interface
----@field private __alreadyProcessed { [string]: boolean } Exclusion table to prevent re-processing incoming messages. <br/> Indexed by [Origin IP(N) or HW Addr] | [RTTP response domain] | [Origin domain] | [Origin IP(N) or HW Addr]:[Connection ID]
----@field private __waitingForIPAccept boolean If the interface has received an IP offer and is awaiting confirmation
----@field private __waitingForRenew number If the interface has requested to renew it's IP lease and is awaiting confirmation
----@field private __dnsCache { [string]: DNS.DNSRecord } Cache of DNS records
----@field private __dhcpIP number? The IP address of the DHCP that issued the interface's IP address
----@field private __config NetInterface.Config The configuration of the interface
----@field private __msgHandlers { [number]: fun(msg: NetMessage) } Table of end-user message handlers
----@field private __msgHandlerId number The ID of the next end-user message handler
----@field private __multicastSubscribers { [string]: { [string]: fun(ip: number, msg: NetMessage) } } Table of end-user multicast message handlers. Indexed by numeric IP as string
----@field private __multicastSubscriberCounts { [string]: number } Table of counts of multicast message handlers. Used for assigning handler IDs
+---@field protected __modem ModemPeripheral The modem the interface will use
+---@field protected __modemSide string The name of the modem's side
+---@field protected __log Logger The interface's logger
+---@field protected __ip number? The IP address of the interface. May be `nil` if no IP was set or DHCP request failed (Numeric)
+---@field protected __subnetMask number? The mask of the subnet of the interface (Numeric, a bitmask to get address on subnet)
+---@field protected __ipLeaseExpire number? The UTC epoch time the current IP lease will expire
+---@field protected __hwAddress string The Hardware address of the interface (address only, no prefix)
+---@field protected __hostname string? The hostname the interface will report itself as
+---@field protected __remoteKeys { [string]: string|byteArray } Collection of remote device public keys. Used for encrypting outgoing messages and verify incoming ones. <br/> Indexed by [Origin IP(N) or HW Addr] | [RTTP response domain] | [Origin domain] | [Origin IP(N) or HW Addr]:[Connection ID]
+---@field protected __waitingMsgs NetMessage[] A queue of messages waiting to be processed
+---@field protected __handlerId number? The ID of the event handler for modem messages
+---@field protected __openPorts { [number]: boolean } A table of the currently open ports on this interface
+---@field protected __alreadyProcessed { [string]: boolean } Exclusion table to prevent re-processing incoming messages. <br/> Indexed by [Origin IP(N) or HW Addr] | [RTTP response domain] | [Origin domain] | [Origin IP(N) or HW Addr]:[Connection ID]
+---@field protected __waitingForIPAccept boolean If the interface has received an IP offer and is awaiting confirmation
+---@field protected __waitingForRenew number If the interface has requested to renew it's IP lease and is awaiting confirmation
+---@field protected __dnsCache { [string]: DNS.DNSRecord } Cache of DNS records
+---@field protected __dhcpIP number? The IP address of the DHCP that issued the interface's IP address
+---@field protected __config NetInterface.Config The configuration of the interface
+---@field protected __msgHandlers { [number]: fun(msg: NetMessage) } Table of end-user message handlers
+---@field protected __msgHandlerId number The ID of the next end-user message handler
+---@field protected __multicastSubscribers { [string]: { [string]: fun(ip: number, msg: NetMessage) } } Table of end-user multicast message handlers. Indexed by numeric IP as string
+---@field protected __multicastSubscriberCounts { [string]: number } Table of counts of multicast message handlers. Used for assigning handler IDs
 local NetInterface = {
     __config = {
         respondToPing = true
@@ -34,10 +34,13 @@ local NetInterfaceMT = {
     __index = NetInterface,
     type = 'NetInterface'
 }
+_G.net._ = {}
+net._.NetInterfaceMT = NetInterfaceMT
 
 ---@class NetInterface.Config
 ---@field respondToPing boolean
 ---@field hostname string?
+---@field side string?
 ---@field originHostname string?
 ---@field receiveAll boolean?
 ---@field verbose boolean?
@@ -52,13 +55,14 @@ local interfaces = {}
 ---@param modem ModemPeripheral|string|nil
 ---@param ip string|number|nil
 ---@param hwAddress string?
+---@param cfgPath string?
 ---@return NetInterface interface
-function _G.net.NetInterface(name, modem, ip, hwAddress)
+function _G.net.NetInterface(name, modem, ip, hwAddress, cfgPath)
     local o = {}
     setmetatable(o, NetInterfaceMT) ---@cast o NetInterface
     o.__id = interfaceNumber
     interfaceNumber = interfaceNumber + 1
-    o:__init__(name, modem, ip, hwAddress)
+    o:__init__(name, modem, ip, hwAddress, cfgPath)
     table.insert(interfaces, o)
     return o
 end
@@ -72,11 +76,18 @@ end
 ---@param modem ModemPeripheral|string|nil
 ---@param ip string|number|nil
 ---@param hwAddress string?
-function NetInterface:__init__(name, modem, ip, hwAddress)
+---@param cfgPath string?
+function NetInterface:__init__(name, modem, ip, hwAddress, cfgPath)
     name = name or ('net_' .. self.__id)
     self.name = name
     self.__log = pos.Logger(('net_interface_%s.log'):format(name))
     self.__log.logTime = true
+
+    if (cfgPath) then
+        self:setConfig(cfgPath)
+    end
+    
+    modem = modem or self.__config.side
 
     if modem == nil then
         local modems = { peripheral.find("modem", function(_, test)
@@ -180,7 +191,7 @@ function NetInterface.generateHWAddress()
     return string.randomString(16, { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' })
 end
 
----@private
+---@protected
 ---@param dest NetAddress
 ---@param header NetMessage.Header
 ---@param body table|string|nil
@@ -225,7 +236,7 @@ function NetInterface:useMsgId()
     return msgId
 end
 
----@private
+---@protected
 ---@param port number
 ---@param dest NetAddress|string
 ---@param header table
@@ -259,7 +270,7 @@ function NetInterface:__sendMsg(port, dest, header, body, id)
             if self.__config.verbose then
                 self.__log:debug('Sending message to %s:%d #%d: %s', net.ipFormat(msg.dest), msg.port, msg.msgid, msg.header.type)
             end
-            self.__modem.transmit(msg.port, msg.port, msg)
+            self:__sendRaw(msg, msg.port)
         elseif self.__waitingForRenew + 1000 * 30 < os.epoch('utc') then
             self.__log:warn('Unable to renew IP address')
             self.__waitingForRenew = nil
@@ -315,7 +326,7 @@ function NetInterface:__sendMsg(port, dest, header, body, id)
         end
         self.__log:debug('Sending message to %s:%d #%d%s: %s', net.ipFormat(destIP), port, id, s, msg.header.type)
     end
-    self.__modem.transmit(port, port, msg)
+    self:__sendRaw(msg, port)
     return id
 end
 
@@ -328,11 +339,21 @@ function NetInterface:sendRaw(msg, port)
     self:open(port)
     if self.__config.verbose then
         local s = '';
-        if(msg.header.conId) then
-            s = ' c#'..msg.header.conId
+        if (msg.header.conId) then
+            s = ' c#' .. msg.header.conId
         end
-        self.__log:debug('Sending raw message to %s:%d #%d%s: %s', net.ipFormat(msg.dest), port, msg.msgid, s, msg.header.type)
+        self.__log:debug('Sending raw message to %s:%d #%d%s: %s', net.ipFormat(msg.dest), port, msg.msgid, s,
+        msg.header.type)
     end
+    self:__sendRaw(msg, port)
+end
+
+---@protected
+---@param msg NetMessage
+---@param port integer
+function NetInterface:__sendRaw(msg, port)
+    expect(1, msg, 'table')
+    expect(2, port, 'number')
     self.__modem.transmit(port, port, msg)
 end
 
@@ -426,7 +447,7 @@ function NetInterface:open(port)
     self.__openPorts[port] = true
 end
 
----@private
+---@protected
 ---@param port number
 function NetInterface:close(port)
     expect(1, port, 'number')
@@ -469,7 +490,13 @@ function NetInterface:validMsg(port, msg)
     return false
 end
 
----@private
+---@protected
+---@param ip integer
+function NetInterface:_onIpAccept(ip)
+
+end
+
+---@protected
 function NetInterface:__onModemMessage(event)
     local _, side, port, _, msg = table.unpack(event)
     if side ~= self.__modemSide then
@@ -599,6 +626,7 @@ function NetInterface:__onModemMessage(event)
                 self.__dhcpIP = msg.origin --[[@as number]]
 
                 self.__waitingForIPAccept = false
+                self:_onIpAccept(self.__ip)
             end
         elseif msg.header.type == 'net.ip.req.return' then
             if (not self.__ip) and (not self.__waitingForIPAccept) then
@@ -640,7 +668,7 @@ function NetInterface:__onModemMessage(event)
     end
 end
 
----@private
+---@protected
 ---@param msg NetMessage
 function NetInterface:__onMsg(msg)
     os.queueEvent(net.NET_MESSAGE_EVENT, msg, self.name)
@@ -671,8 +699,9 @@ end
 function NetInterface:getDNSRecord(hostname)
     local dnsRecord = self.__dnsCache[hostname] ---@type DNS.DNSRecord?
     if dnsRecord then
-        if dnsRecord.ttl and dnsRecord.time and dnsRecord.time + dnsRecord.ttl < os.epoch('utc') then
+        if dnsRecord.ttl and dnsRecord.time and dnsRecord.time + (dnsRecord.ttl*60*1000) < os.epoch('utc') then
             dnsRecord = nil
+            self.__dnsCache[hostname] = nil
         end
     end
     if not self.__dhcpIP then
@@ -696,6 +725,7 @@ function NetInterface:getDNSRecord(hostname)
             return nil
         end
         dnsRecord = msg.body.record
+        dnsRecord.time = os.epoch('utc')
         self.__dnsCache[hostname] = dnsRecord
         self.__log:debug('Received DNS record for %s: %s, %s', hostname, dnsRecord.type, (dnsRecord.ip and net.ipFormat(dnsRecord.ip)) or dnsRecord.pointer)
     end
@@ -742,7 +772,7 @@ function NetInterface:resolveHostname(hostname)
 end
 
 ---Increment the message handler counter, and return the value
----@private
+---@protected
 ---@return number handlerId
 function NetInterface:__useHandlerId()
     local id = self.__msgHandlerId
@@ -837,6 +867,12 @@ end
 ---@return ModemPeripheral modem
 function NetInterface:getModem()
     return self.__modem
+end
+
+---Get the modem side this interface uses
+---@return string side
+function NetInterface:getModemSide()
+    return self.__modemSide
 end
 
 ---Send a message over this interface
