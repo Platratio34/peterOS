@@ -7,10 +7,19 @@ local expect = require("cc.expect")
 local eventHandlers = {} ---@type { [integer]: EventHandler }
 local eventHandlerId = 0
 
-local osPullEventRaw = os.pullEventRaw
-local function pullEventRaw(sFilter)
+local mainThread = coroutine.running()
+
+local coroutineYield = coroutine.yield
+local function yield(sFilter)
+    local co = coroutine.running()
+    if(coroutine.status(mainThread) ~= "running") then
+        mainThread = co
+    end
+    if(mainThread ~= co) then
+        return coroutineYield(sFilter)
+    end
     while true do
-        local event = { osPullEventRaw() }
+        local event = { coroutineYield() }
         local eType = event[1]
 
         for eId, eHandler in pairs(eventHandlers) do
@@ -31,13 +40,13 @@ local function pullEventRaw(sFilter)
         end
     end
 end
-os.pullEventRaw = pullEventRaw
+coroutine.yield = yield
 
 ---@diagnostic disable-next-line: duplicate-set-field
 os.pullEvent = function(sFilter)
     local event = { os.pullEventRaw(sFilter) }
     if event[1] == "terminate" and not osInternal.blockTerminate then
-        error("Terminating", 0)
+        error("Terminated", 0)
     end
     return table.unpack(event)
 end
